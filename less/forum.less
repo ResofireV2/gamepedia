@@ -1,2 +1,142 @@
 // Gamepedia forum styles
-// Expanded in later stages
+
+// ── Hero ──────────────────────────────────────────────────────────────────────
+
+.GamepediaHero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  padding: 40px 0;
+  margin-bottom: 30px;
+
+  .GamepediaHero-title {
+    margin: 0 0 8px;
+    font-size: 2em;
+    color: #e94560;
+
+    i { margin-right: 10px; }
+  }
+
+  .GamepediaHero-subtitle {
+    margin: 0;
+    opacity: 0.7;
+    font-size: 1.1em;
+  }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+
+.GamepediaFilters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+
+  .GamepediaFilters-search {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .GamepediaFilters-genre,
+  .GamepediaFilters-year {
+    width: auto;
+    min-width: 140px;
+  }
+}
+
+// ── Game Grid ─────────────────────────────────────────────────────────────────
+
+.GamepediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.GamepediaGrid-loading,
+.GamepediaGrid-empty {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  grid-column: 1 / -1;
+}
+
+// ── Game Card ─────────────────────────────────────────────────────────────────
+
+.GameCard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--control-bg);
+  border: 1px solid var(--control-bg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+.GameCard-cover {
+  width: 100%;
+  padding-top: 133%;  // 3:4 aspect ratio — standard game cover
+  position: relative;
+  background: #2a2a3e;
+  overflow: hidden;
+
+  img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .GameCard-noCover {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: #555;
+  }
+}
+
+.GameCard-info {
+  padding: 10px;
+}
+
+.GameCard-title {
+  font-weight: bold;
+  font-size: 0.85em;
+  line-height: 1.3;
+  margin-bottom: 3px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.GameCard-year {
+  font-size: 0.75em;
+  color: #888;
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+.GamepediaPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0 40px;
+
+  .GamepediaPagination-info {
+    color: #888;
+    font-size: 0.9em;
+  }
+}

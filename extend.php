@@ -21,7 +21,9 @@ return [
     // Forum frontend — placeholder for later stages
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
-        ->css(__DIR__ . '/less/forum.less'),
+        ->css(__DIR__ . '/less/forum.less')
+        ->route('/gamepedia', 'gamepedia')
+        ->route('/gamepedia/:slug', 'gamepedia.game'),
 
     // Locale
     new Extend\Locales(__DIR__ . '/locale'),

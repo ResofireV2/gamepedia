@@ -1,0 +1,38 @@
+{
+    "name": "resofire/gamepedia",
+    "description": "A game database extension for Flarum, powered by IGDB.",
+    "version": "0.1.0",
+    "type": "flarum-extension",
+    "keywords": [
+        "flarum",
+        "extension",
+        "games",
+        "igdb",
+        "gamepedia"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Resofire"
+        }
+    ],
+    "require": {
+        "flarum/core": "^1.8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Resofire\\Gamepedia\\": "src/"
+        }
+    },
+    "extra": {
+        "flarum-extension": {
+            "title": "Gamepedia",
+            "category": "feature",
+            "icon": {
+                "name": "fas fa-gamepad",
+                "backgroundColor": "#1a1a2e",
+                "color": "#e94560"
+            }
+        }
+    }
+}

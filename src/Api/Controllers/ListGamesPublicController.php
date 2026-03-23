@@ -16,7 +16,10 @@ class ListGamesPublicController implements RequestHandlerInterface
     {
         // Respect the gamepedia.view permission
         $actor = RequestUtil::getActor($request);
-        $actor->assertCan('gamepedia.view');
+
+        if (!$actor->hasPermission('gamepedia.view') && !$actor->isAdmin()) {
+            return new JsonResponse(['error' => 'Permission denied.'], 403);
+        }
 
         $params = $request->getQueryParams();
         $search = trim($params['search'] ?? '');

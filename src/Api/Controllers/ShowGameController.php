@@ -14,7 +14,10 @@ class ShowGameController implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
-        $actor->assertCan('gamepedia.view');
+
+        if (!$actor->hasPermission('gamepedia.view') && !$actor->isAdmin()) {
+            return new JsonResponse(['error' => 'Permission denied.'], 403);
+        }
 
         $slug = $request->getAttribute('slug');
         $game = Game::with(['genres', 'screenshots'])

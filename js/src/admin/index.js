@@ -393,6 +393,7 @@ app.initializers.add('resofire-gamepedia', function () {
         permission: 'gamepedia.view',
         label: 'Browse Gamepedia and view game pages',
         icon: 'fas fa-gamepad',
+        allowGuest: true,
       },
       'view'
     )

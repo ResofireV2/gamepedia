@@ -7,6 +7,8 @@ import Modal from 'flarum/common/components/Modal';
 import TextEditor from 'flarum/common/components/TextEditor';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import ReplyComposer from 'flarum/forum/components/ReplyComposer';
+import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
+import DiscussionHero from 'flarum/forum/components/DiscussionHero';
 
 // ─── Simple Lightbox ──────────────────────────────────────────────────────────
 
@@ -501,6 +503,47 @@ app.initializers.add('resofire-gamepedia', function () {
       href: app.route('gamepedia'),
       icon: 'fas fa-gamepad',
     }, 'Gamepedia'), 80);
+  });
+
+  // Game badges on discussion list items
+  extend(DiscussionListItem.prototype, 'infoItems', function (items) {
+    const games = this.attrs.discussion.attribute('gamepediaGames');
+    if (!games || games.length === 0) return;
+
+    items.add('gamepediaGames', m('.GameBadges',
+      games.map((game) => m('a.GameBadge', {
+        key:      game.id,
+        href:     app.route('gamepedia.game', { slug: game.slug }),
+        title:    game.name,
+        oncreate: m.route.link,
+        onclick:  (e) => e.stopPropagation(),
+      }, [
+        game.cover_image_url
+          ? m('img.GameBadge-cover', { src: game.cover_image_url, alt: game.name })
+          : m('i.fas.fa-gamepad'),
+        m('span.GameBadge-name', game.name),
+      ]))
+    ), 50);
+  });
+
+  // Game badges on discussion hero (discussion page)
+  extend(DiscussionHero.prototype, 'items', function (items) {
+    const games = this.attrs.discussion.attribute('gamepediaGames');
+    if (!games || games.length === 0) return;
+
+    items.add('gamepediaGames', m('.GameBadges',
+      games.map((game) => m('a.GameBadge', {
+        key:      game.id,
+        href:     app.route('gamepedia.game', { slug: game.slug }),
+        title:    game.name,
+        oncreate: m.route.link,
+      }, [
+        game.cover_image_url
+          ? m('img.GameBadge-cover', { src: game.cover_image_url, alt: game.name })
+          : m('i.fas.fa-gamepad'),
+        m('span.GameBadge-name', game.name),
+      ]))
+    ), 5);
   });
 
   // Add gamepad button to the TextEditor toolbar

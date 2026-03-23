@@ -613,3 +613,72 @@
     flex-shrink: 0;
   }
 }
+
+// ── Discussion Game Badges ────────────────────────────────────────────────────
+
+.GameBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.GameBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--control-bg);
+  border-radius: 4px;
+  padding: 2px 8px 2px 2px;
+  font-size: 0.8em;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(128,128,128,0.15);
+  max-width: 160px;
+
+  &:hover {
+    background: var(--control-bg-active, #e0e0e0);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .GameBadge-cover {
+    width: 20px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  i.fas.fa-gamepad {
+    width: 20px;
+    text-align: center;
+    color: #888;
+    font-size: 0.9em;
+  }
+
+  .GameBadge-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// In the discussion hero, make badges slightly larger
+.DiscussionHero .GameBadge {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 3px 10px 3px 3px;
+  font-size: 0.85em;
+
+  &:hover {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+  }
+
+  .GameBadge-cover {
+    width: 24px;
+    height: 32px;
+  }
+}

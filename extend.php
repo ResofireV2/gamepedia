@@ -5,6 +5,8 @@ use Flarum\Discussion\Event\Saving as DiscussionSaving;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
 use Flarum\Post\Event\Saving as PostSaving;
 use Flarum\Post\Event\Posted;
+use Flarum\Discussion\Discussion;
+use Resofire\Gamepedia\Models\Game;
 use Resofire\Gamepedia\GamepediaServiceProvider;
 use Resofire\Gamepedia\Listeners\SaveGameLinks;
 use Resofire\Gamepedia\Listeners\SaveGameLinksAfterCreate;
@@ -42,6 +44,10 @@ return [
         ->get('/gamepedia/admin/games', 'gamepedia.admin.games.index', ListGamesController::class)
         ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class)
         ->delete('/gamepedia/admin/games/{id}', 'gamepedia.admin.games.delete', DeleteGameController::class),
+
+    // Register gamepediaGames relationship on Flarum's Discussion model
+    (new Extend\Model(Discussion::class))
+        ->belongsToMany('gamepediaGames', Game::class, 'gamepedia_discussion_game', 'discussion_id', 'game_id'),
 
     // Game linking — save IDs from composer to pivot table
     (new Extend\Event())

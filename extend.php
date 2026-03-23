@@ -17,7 +17,7 @@ use Resofire\Gamepedia\Api\Controllers\ShowGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\IgdbSearchController;
 use Resofire\Gamepedia\Api\Controllers\Admin\ImportGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\ListGamesController;
-use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGameController;
+use Resofire\Gamepedia\Api\Controllers\Admin\RefreshGameController;
 
 return [
     (new Extend\ServiceProvider())
@@ -45,7 +45,8 @@ return [
         ->get('/gamepedia/admin/igdb-search', 'gamepedia.admin.igdb-search', IgdbSearchController::class)
         ->get('/gamepedia/admin/games', 'gamepedia.admin.games.index', ListGamesController::class)
         ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class)
-        ->delete('/gamepedia/admin/games/{id}', 'gamepedia.admin.games.delete', DeleteGameController::class),
+        ->delete('/gamepedia/admin/games/{id}', 'gamepedia.admin.games.delete', DeleteGameController::class)
+        ->post('/gamepedia/admin/games/{id}/refresh', 'gamepedia.admin.games.refresh', RefreshGameController::class),
 
     // Inject gamepediaGames into every discussion API response
     (new Extend\ApiSerializer(DiscussionSerializer::class))

@@ -141,14 +141,37 @@ class GameDetailPage extends Page {
     this.loading   = true;
     this.error     = null;
     this.bodyClass = 'App--gamepedia';
+    this.loadGame(window.m.route.param('slug'));
+  }
 
-    const slug = window.m.route.param('slug');
-    this.loadGame(slug);
+  // After Mithril renders, initialize Fancybox on our screenshot links.
+  // The fancybox extension loads @fancyapps/ui globally — we access it
+  // via the window object since it's bundled by that extension.
+  oncreate(vnode) {
+    super.oncreate && super.oncreate(vnode);
+    this.initFancybox();
+  }
+
+  onupdate(vnode) {
+    super.onupdate && super.onupdate(vnode);
+    this.initFancybox();
+  }
+
+  initFancybox() {
+    // @fancyapps/ui is loaded by the fancybox extension and exposed
+    // on window via its webpack bundle. We check for it gracefully.
+    if (typeof window.Fancybox !== 'undefined') {
+      window.Fancybox.bind('[data-fancybox="screenshots"]', {
+        Carousel: { infinite: false },
+        Images:   { initialSize: 'fit' },
+        dragToClose: true,
+        Hash: false,
+      });
+    }
   }
 
   loadGame(slug) {
     const m = window.m;
-
     app.request({
       method: 'GET',
       url: app.forum.attribute('apiUrl') + '/gamepedia/games/' + slug,
@@ -187,7 +210,7 @@ class GameDetailPage extends Page {
 
     return m('.GameDetailPage', [
 
-      // ── Hero ────────────────────────────────────────────────────────────
+      // ── Hero ──────────────────────────────────────────────────────────
       m('.GameDetailHero', {
         style: game.cover_image_url
           ? 'background-image: url(' + game.cover_image_url.replace('cover_big', '1080p') + ')'
@@ -209,8 +232,7 @@ class GameDetailPage extends Page {
                 game.developer && m('p.GameDetailHero-developer', [
                   m('i.fas.fa-code'), ' ', game.developer,
                   game.publisher && game.publisher !== game.developer
-                    ? [' / ', game.publisher]
-                    : null,
+                    ? [' / ', game.publisher] : null,
                 ]),
                 game.genres && game.genres.length > 0 && m('.GameDetailHero-genres',
                   game.genres.map((g) => m('a.GameDetailGenreTag', {
@@ -228,30 +250,35 @@ class GameDetailPage extends Page {
         ]),
       ]),
 
-      // ── Main content ────────────────────────────────────────────────────
+      // ── Body ──────────────────────────────────────────────────────────
       m('.container.GameDetailBody', [
         m('.GameDetailBody-main', [
 
-          // Summary
           game.summary && m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'About'),
             m('p.GameDetailSummary', game.summary),
           ]),
 
-          // Trailer
+          // Trailer — link to YouTube instead of embedding to avoid
+          // blocked-embed errors (Error 153) from some video owners
           game.trailer_youtube_id && m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'Trailer'),
             m('.GameDetailTrailer', [
-              m('iframe', {
-                src:             'https://www.youtube.com/embed/' + game.trailer_youtube_id,
-                frameborder:     '0',
-                allowfullscreen: true,
-                allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-              }),
+              m('a.GameDetailTrailerThumb', {
+                href:   'https://www.youtube.com/watch?v=' + game.trailer_youtube_id,
+                target: '_blank',
+                rel:    'noopener noreferrer',
+              }, [
+                m('img', {
+                  src: 'https://img.youtube.com/vi/' + game.trailer_youtube_id + '/maxresdefault.jpg',
+                  alt: game.name + ' trailer',
+                }),
+                m('.GameDetailTrailerThumb-play', m('i.fas.fa-play-circle')),
+              ]),
             ]),
           ]),
 
-          // Screenshots
+          // Screenshots — data-fancybox attribute picked up by initFancybox()
           game.screenshots && game.screenshots.length > 0 && m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'Screenshots'),
             m('.GameDetailScreenshots',
@@ -266,10 +293,9 @@ class GameDetailPage extends Page {
           ]),
         ]),
 
-        // ── Sidebar ───────────────────────────────────────────────────────
+        // ── Sidebar ─────────────────────────────────────────────────────
         m('.GameDetailBody-sidebar', [
 
-          // Game info card
           m('.GameDetailInfoCard', [
             m('h3.GameDetailInfoCard-title', 'Game Info'),
             game.developer && m('.GameDetailInfoCard-row', [
@@ -290,7 +316,6 @@ class GameDetailPage extends Page {
             ]),
           ]),
 
-          // Related discussions
           m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'Related Discussions'),
             game.related_discussions && game.related_discussions.length > 0
@@ -301,9 +326,7 @@ class GameDetailPage extends Page {
                     oncreate: m.route.link,
                   }, [
                     m('.GameDetailDiscussion-title', d.title),
-                    m('.GameDetailDiscussion-meta', [
-                      m('i.fas.fa-comment'), ' ', d.comment_count,
-                    ]),
+                    m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
                   ]))
                 )
               : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),

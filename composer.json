@@ -1,7 +1,6 @@
 {
     "name": "resofire/gamepedia",
     "description": "A game database extension for Flarum, powered by IGDB.",
-    "version": "0.1.0",
     "type": "flarum-extension",
     "keywords": [
         "flarum",

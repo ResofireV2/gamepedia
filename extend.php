@@ -3,6 +3,8 @@
 namespace Resofire\Gamepedia;
 
 use Flarum\Extend;
+use Resofire\Gamepedia\Api\Controllers\Admin\IgdbSearchController;
+use Resofire\Gamepedia\Api\Controllers\Admin\ImportGameController;
 
 return [
     (new Extend\ServiceProvider())
@@ -20,4 +22,9 @@ return [
 
     // Locale
     new Extend\Locales(__DIR__ . '/locale'),
+
+    // Admin API routes
+    (new Extend\Routes('api'))
+        ->get('/gamepedia/admin/igdb-search', 'gamepedia.admin.igdb-search', IgdbSearchController::class)
+        ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class),
 ];

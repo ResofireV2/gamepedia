@@ -4,6 +4,60 @@ import IndexPage from 'flarum/forum/components/IndexPage';
 import LinkButton from 'flarum/common/components/LinkButton';
 import Page from 'flarum/common/components/Page';
 
+// ─── Simple Lightbox ──────────────────────────────────────────────────────────
+// Minimal inline lightbox for screenshots. No external dependencies.
+
+function openLightbox(screenshots, startIndex) {
+  const m = window.m;
+  let current = startIndex;
+
+  // Remove any existing lightbox
+  const existing = document.getElementById('gp-lightbox');
+  if (existing) existing.remove();
+
+  const render = () => {
+    const lb = document.getElementById('gp-lightbox');
+    if (!lb) return;
+    const img = lb.querySelector('.gp-lb-img');
+    const counter = lb.querySelector('.gp-lb-counter');
+    if (img) img.src = screenshots[current].url;
+    if (counter) counter.textContent = (current + 1) + ' / ' + screenshots.length;
+    lb.querySelector('.gp-lb-prev').style.display = current > 0 ? '' : 'none';
+    lb.querySelector('.gp-lb-next').style.display = current < screenshots.length - 1 ? '' : 'none';
+  };
+
+  const lb = document.createElement('div');
+  lb.id = 'gp-lightbox';
+  lb.innerHTML = `
+    <div class="gp-lb-backdrop"></div>
+    <div class="gp-lb-content">
+      <button class="gp-lb-close" aria-label="Close">✕</button>
+      <button class="gp-lb-prev" aria-label="Previous">&#8249;</button>
+      <img class="gp-lb-img" src="" alt="Screenshot" />
+      <button class="gp-lb-next" aria-label="Next">&#8250;</button>
+      <div class="gp-lb-counter"></div>
+    </div>
+  `;
+
+  lb.querySelector('.gp-lb-backdrop').onclick = () => lb.remove();
+  lb.querySelector('.gp-lb-close').onclick   = () => lb.remove();
+  lb.querySelector('.gp-lb-prev').onclick    = () => { current--; render(); };
+  lb.querySelector('.gp-lb-next').onclick    = () => { current++; render(); };
+
+  document.addEventListener('keydown', function onKey(e) {
+    if (!document.getElementById('gp-lightbox')) {
+      document.removeEventListener('keydown', onKey);
+      return;
+    }
+    if (e.key === 'Escape')     lb.remove();
+    if (e.key === 'ArrowLeft'  && current > 0)                  { current--; render(); }
+    if (e.key === 'ArrowRight' && current < screenshots.length - 1) { current++; render(); }
+  });
+
+  document.body.appendChild(lb);
+  render();
+}
+
 // ─── Gamepedia Browse Page ────────────────────────────────────────────────────
 
 class GamepediaPage extends Page {
@@ -144,32 +198,6 @@ class GameDetailPage extends Page {
     this.loadGame(window.m.route.param('slug'));
   }
 
-  // After Mithril renders, initialize Fancybox on our screenshot links.
-  // The fancybox extension loads @fancyapps/ui globally — we access it
-  // via the window object since it's bundled by that extension.
-  oncreate(vnode) {
-    super.oncreate && super.oncreate(vnode);
-    this.initFancybox();
-  }
-
-  onupdate(vnode) {
-    super.onupdate && super.onupdate(vnode);
-    this.initFancybox();
-  }
-
-  initFancybox() {
-    // @fancyapps/ui is loaded by the fancybox extension and exposed
-    // on window via its webpack bundle. We check for it gracefully.
-    if (typeof window.Fancybox !== 'undefined') {
-      window.Fancybox.bind('[data-fancybox="screenshots"]', {
-        Carousel: { infinite: false },
-        Images:   { initialSize: 'fit' },
-        dragToClose: true,
-        Hash: false,
-      });
-    }
-  }
-
   loadGame(slug) {
     const m = window.m;
     app.request({
@@ -210,7 +238,7 @@ class GameDetailPage extends Page {
 
     return m('.GameDetailPage', [
 
-      // ── Hero ──────────────────────────────────────────────────────────
+      // Hero
       m('.GameDetailHero', {
         style: game.cover_image_url
           ? 'background-image: url(' + game.cover_image_url.replace('cover_big', '1080p') + ')'
@@ -250,7 +278,7 @@ class GameDetailPage extends Page {
         ]),
       ]),
 
-      // ── Body ──────────────────────────────────────────────────────────
+      // Body
       m('.container.GameDetailBody', [
         m('.GameDetailBody-main', [
 
@@ -259,33 +287,31 @@ class GameDetailPage extends Page {
             m('p.GameDetailSummary', game.summary),
           ]),
 
-          // Trailer — link to YouTube instead of embedding to avoid
-          // blocked-embed errors (Error 153) from some video owners
+          // YouTube embed — autoplay disabled, no cookie domain
           game.trailer_youtube_id && m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'Trailer'),
             m('.GameDetailTrailer', [
-              m('a.GameDetailTrailerThumb', {
-                href:   'https://www.youtube.com/watch?v=' + game.trailer_youtube_id,
-                target: '_blank',
-                rel:    'noopener noreferrer',
-              }, [
-                m('img', {
-                  src: 'https://img.youtube.com/vi/' + game.trailer_youtube_id + '/maxresdefault.jpg',
-                  alt: game.name + ' trailer',
-                }),
-                m('.GameDetailTrailerThumb-play', m('i.fas.fa-play-circle')),
-              ]),
+              m('iframe', {
+                src:   'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                title: game.name + ' trailer',
+                allow: 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                allowfullscreen: true,
+                frameborder: '0',
+              }),
             ]),
           ]),
 
-          // Screenshots — data-fancybox attribute picked up by initFancybox()
+          // Screenshots — our own lightbox
           game.screenshots && game.screenshots.length > 0 && m('.GameDetailSection', [
             m('h3.GameDetailSection-title', 'Screenshots'),
             m('.GameDetailScreenshots',
-              game.screenshots.map((s) => m('a.GameDetailScreenshot', {
-                href:            s.url,
-                'data-fancybox': 'screenshots',
-                key:             s.id,
+              game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
+                key:     s.id,
+                href:    '#',
+                onclick: (e) => {
+                  e.preventDefault();
+                  openLightbox(game.screenshots, idx);
+                },
               }, [
                 m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
               ]))
@@ -293,7 +319,7 @@ class GameDetailPage extends Page {
           ]),
         ]),
 
-        // ── Sidebar ─────────────────────────────────────────────────────
+        // Sidebar
         m('.GameDetailBody-sidebar', [
 
           m('.GameDetailInfoCard', [

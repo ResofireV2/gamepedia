@@ -194,7 +194,7 @@ class GameDetailPage extends Page {
     this.game      = null;
     this.loading   = true;
     this.error     = null;
-    this.bodyClass = 'App--gamepedia';
+    this.bodyClass = 'App--gamepedia App--gamepediaDetail';
     this.loadGame(window.m.route.param('slug'));
   }
 

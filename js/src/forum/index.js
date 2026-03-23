@@ -419,7 +419,7 @@ class GameDetailPage extends Page {
                 ? m('.GameDetailDiscussions',
                     game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
                       key:      d.id,
-                      href:     app.route('discussion', { id: d.slug || d.id }),
+                      href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
                       oncreate: m.route.link,
                     }, [
                       m('.GameDetailDiscussion-title', d.title),

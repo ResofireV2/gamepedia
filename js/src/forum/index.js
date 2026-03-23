@@ -292,11 +292,12 @@ class GameDetailPage extends Page {
               m('h3.GameDetailSection-title', 'Trailer'),
               m('.GameDetailTrailer', [
                 m('iframe', {
-                  src:   'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                  title: game.name + ' trailer',
-                  allow: 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                  src:            'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                  title:          game.name + ' trailer',
+                  allow:          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                  referrerpolicy: 'strict-origin-when-cross-origin',
                   allowfullscreen: true,
-                  frameborder: '0',
+                  frameborder:    '0',
                 }),
               ]),
             ]) : null,

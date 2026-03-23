@@ -279,83 +279,84 @@ class GameDetailPage extends Page {
       ]),
 
       // Body
-      m('.container.GameDetailBody', [
-        m('.GameDetailBody-main', [
+      m('.container', [
+        m('.GameDetailBody', [
+          m('.GameDetailBody-main', [
 
-          game.summary && m('.GameDetailSection', [
-            m('h3.GameDetailSection-title', 'About'),
-            m('p.GameDetailSummary', game.summary),
+            game.summary ? m('.GameDetailSection', [
+              m('h3.GameDetailSection-title', 'About'),
+              m('p.GameDetailSummary', game.summary),
+            ]) : null,
+
+            game.trailer_youtube_id ? m('.GameDetailSection', [
+              m('h3.GameDetailSection-title', 'Trailer'),
+              m('.GameDetailTrailer', [
+                m('iframe', {
+                  src:   'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                  title: game.name + ' trailer',
+                  allow: 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                  allowfullscreen: true,
+                  frameborder: '0',
+                }),
+              ]),
+            ]) : null,
+
+            game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
+              m('h3.GameDetailSection-title', 'Screenshots'),
+              m('.GameDetailScreenshots',
+                game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
+                  key:     s.id,
+                  href:    '#',
+                  onclick: (e) => {
+                    e.preventDefault();
+                    openLightbox(game.screenshots, idx);
+                  },
+                }, [
+                  m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
+                ]))
+              ),
+            ]) : null,
+
           ]),
 
-          // YouTube embed — autoplay disabled, no cookie domain
-          game.trailer_youtube_id && m('.GameDetailSection', [
-            m('h3.GameDetailSection-title', 'Trailer'),
-            m('.GameDetailTrailer', [
-              m('iframe', {
-                src:   'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                title: game.name + ' trailer',
-                allow: 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-                allowfullscreen: true,
-                frameborder: '0',
-              }),
-            ]),
-          ]),
+          m('.GameDetailBody-sidebar', [
 
-          // Screenshots — our own lightbox
-          game.screenshots && game.screenshots.length > 0 && m('.GameDetailSection', [
-            m('h3.GameDetailSection-title', 'Screenshots'),
-            m('.GameDetailScreenshots',
-              game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
-                key:     s.id,
-                href:    '#',
-                onclick: (e) => {
-                  e.preventDefault();
-                  openLightbox(game.screenshots, idx);
-                },
-              }, [
-                m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
-              ]))
-            ),
-          ]),
-        ]),
+            m('.GameDetailInfoCard', [
+              m('h3.GameDetailInfoCard-title', 'Game Info'),
+              game.developer ? m('.GameDetailInfoCard-row', [
+                m('span.GameDetailInfoCard-label', 'Developer'),
+                m('span.GameDetailInfoCard-value', game.developer),
+              ]) : null,
+              game.publisher ? m('.GameDetailInfoCard-row', [
+                m('span.GameDetailInfoCard-label', 'Publisher'),
+                m('span.GameDetailInfoCard-value', game.publisher),
+              ]) : null,
+              game.release_date ? m('.GameDetailInfoCard-row', [
+                m('span.GameDetailInfoCard-label', 'Released'),
+                m('span.GameDetailInfoCard-value', game.release_date),
+              ]) : null,
+              game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
+                m('span.GameDetailInfoCard-label', 'Genres'),
+                m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
+              ]) : null,
+            ]),
 
-        // Sidebar
-        m('.GameDetailBody-sidebar', [
+            m('.GameDetailSection', [
+              m('h3.GameDetailSection-title', 'Related Discussions'),
+              game.related_discussions && game.related_discussions.length > 0
+                ? m('.GameDetailDiscussions',
+                    game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
+                      key:      d.id,
+                      href:     app.route('discussion', { id: d.slug || d.id }),
+                      oncreate: m.route.link,
+                    }, [
+                      m('.GameDetailDiscussion-title', d.title),
+                      m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
+                    ]))
+                  )
+                : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
+            ]),
 
-          m('.GameDetailInfoCard', [
-            m('h3.GameDetailInfoCard-title', 'Game Info'),
-            game.developer && m('.GameDetailInfoCard-row', [
-              m('span.GameDetailInfoCard-label', 'Developer'),
-              m('span.GameDetailInfoCard-value', game.developer),
-            ]),
-            game.publisher && m('.GameDetailInfoCard-row', [
-              m('span.GameDetailInfoCard-label', 'Publisher'),
-              m('span.GameDetailInfoCard-value', game.publisher),
-            ]),
-            game.release_date && m('.GameDetailInfoCard-row', [
-              m('span.GameDetailInfoCard-label', 'Released'),
-              m('span.GameDetailInfoCard-value', game.release_date),
-            ]),
-            game.genres && game.genres.length > 0 && m('.GameDetailInfoCard-row', [
-              m('span.GameDetailInfoCard-label', 'Genres'),
-              m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
-            ]),
-          ]),
-
-          m('.GameDetailSection', [
-            m('h3.GameDetailSection-title', 'Related Discussions'),
-            game.related_discussions && game.related_discussions.length > 0
-              ? m('.GameDetailDiscussions',
-                  game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
-                    key:      d.id,
-                    href:     app.route('discussion', { id: d.slug || d.id }),
-                    oncreate: m.route.link,
-                  }, [
-                    m('.GameDetailDiscussion-title', d.title),
-                    m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
-                  ]))
-                )
-              : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
           ]),
         ]),
       ]),

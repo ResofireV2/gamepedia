@@ -128,22 +128,8 @@
 
 // ── Game Detail Page ──────────────────────────────────────────────────────────
 
-// Hide the sidebar nav on the detail page so we get full width
-.App--gamepediaDetail {
-  .App-nav {
-    display: none !important;
-  }
-
-  .App-content {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-
-  // Expand the container to use available width
-  .container {
-    max-width: 1200px;
-  }
-}
+// Remove the App--gamepediaDetail sidebar-hiding approach entirely.
+// Instead we use the full container width and let the grid do its job.
 
 .GameDetailPage {
   padding-bottom: 60px;
@@ -259,7 +245,6 @@
     grid-template-columns: 1fr;
   }
 }
-
 .GameDetailSection {
   margin-bottom: 30px;
 

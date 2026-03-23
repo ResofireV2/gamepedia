@@ -76,7 +76,7 @@ class IgdbService
         fields id, name, summary,
                cover.image_id,
                screenshots.image_id,
-               videos.video_id,
+               videos.video_id, videos.name,
                genres.id, genres.name,
                involved_companies.company.name,
                involved_companies.developer,
@@ -134,8 +134,9 @@ class IgdbService
             'developer'          => $this->extractCompany($game, 'developer'),
             'publisher'          => $this->extractCompany($game, 'publisher'),
 
-            // YouTube trailer — take the first video IGDB returns
-            'trailer_youtube_id' => $game['videos'][0]['video_id'] ?? null,
+            // YouTube trailer — prefer a video whose name contains "Trailer",
+            // then "Reveal", then fall back to the first video.
+            'trailer_youtube_id' => $this->extractTrailerId($game['videos'] ?? []),
 
             // Genres — array of ['igdb_id' => x, 'name' => y]
             'genres'             => $this->extractGenres($game),
@@ -157,6 +158,38 @@ class IgdbService
      * @param  string $role  'developer' or 'publisher'
      * @return string|null
      */
+    /**
+     * Pick the best trailer video_id from IGDB's videos array.
+     *
+     * Priority:
+     *   1. Any video whose name contains "Trailer" (case-insensitive)
+     *   2. Any video whose name contains "Reveal"
+     *   3. First video in the list (whatever IGDB returns)
+     *
+     * @param  array $videos  Raw IGDB videos array, each with video_id and name
+     * @return string|null
+     */
+    protected function extractTrailerId(array $videos): ?string
+    {
+        if (empty($videos)) {
+            return null;
+        }
+
+        $priorities = ['trailer', 'reveal'];
+
+        foreach ($priorities as $keyword) {
+            foreach ($videos as $video) {
+                $name = strtolower($video['name'] ?? '');
+                if (str_contains($name, $keyword)) {
+                    return $video['video_id'] ?? null;
+                }
+            }
+        }
+
+        // Fall back to the first video
+        return $videos[0]['video_id'] ?? null;
+    }
+
     protected function extractCompany(array $game, string $role): ?string
     {
         if (empty($game['involved_companies'])) {

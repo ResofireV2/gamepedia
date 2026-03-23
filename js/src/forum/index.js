@@ -3,26 +3,27 @@ import { extend } from 'flarum/common/extend';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import LinkButton from 'flarum/common/components/LinkButton';
 import Page from 'flarum/common/components/Page';
+import Modal from 'flarum/common/components/Modal';
+import TextEditor from 'flarum/common/components/TextEditor';
+import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
+import ReplyComposer from 'flarum/forum/components/ReplyComposer';
 
 // ─── Simple Lightbox ──────────────────────────────────────────────────────────
-// Minimal inline lightbox for screenshots. No external dependencies.
 
 function openLightbox(screenshots, startIndex) {
-  const m = window.m;
-  let current = startIndex;
-
-  // Remove any existing lightbox
   const existing = document.getElementById('gp-lightbox');
   if (existing) existing.remove();
+
+  let current = startIndex;
 
   const render = () => {
     const lb = document.getElementById('gp-lightbox');
     if (!lb) return;
-    const img = lb.querySelector('.gp-lb-img');
+    const img     = lb.querySelector('.gp-lb-img');
     const counter = lb.querySelector('.gp-lb-counter');
-    if (img) img.src = screenshots[current].url;
+    if (img)     img.src         = screenshots[current].url;
     if (counter) counter.textContent = (current + 1) + ' / ' + screenshots.length;
-    lb.querySelector('.gp-lb-prev').style.display = current > 0 ? '' : 'none';
+    lb.querySelector('.gp-lb-prev').style.display = current > 0                      ? '' : 'none';
     lb.querySelector('.gp-lb-next').style.display = current < screenshots.length - 1 ? '' : 'none';
   };
 
@@ -40,22 +41,111 @@ function openLightbox(screenshots, startIndex) {
   `;
 
   lb.querySelector('.gp-lb-backdrop').onclick = () => lb.remove();
-  lb.querySelector('.gp-lb-close').onclick   = () => lb.remove();
-  lb.querySelector('.gp-lb-prev').onclick    = () => { current--; render(); };
-  lb.querySelector('.gp-lb-next').onclick    = () => { current++; render(); };
+  lb.querySelector('.gp-lb-close').onclick    = () => lb.remove();
+  lb.querySelector('.gp-lb-prev').onclick     = () => { current--; render(); };
+  lb.querySelector('.gp-lb-next').onclick     = () => { current++; render(); };
 
   document.addEventListener('keydown', function onKey(e) {
     if (!document.getElementById('gp-lightbox')) {
       document.removeEventListener('keydown', onKey);
       return;
     }
-    if (e.key === 'Escape')     lb.remove();
-    if (e.key === 'ArrowLeft'  && current > 0)                  { current--; render(); }
+    if (e.key === 'Escape')                                  lb.remove();
+    if (e.key === 'ArrowLeft'  && current > 0)               { current--; render(); }
     if (e.key === 'ArrowRight' && current < screenshots.length - 1) { current++; render(); }
   });
 
   document.body.appendChild(lb);
   render();
+}
+
+// ─── Game Picker Modal ────────────────────────────────────────────────────────
+// Searches locally-imported Gamepedia games (not IGDB) and returns selection.
+
+class GamePickerModal extends Modal {
+  oninit(vnode) {
+    super.oninit(vnode);
+    this.query       = '';
+    this.results     = [];
+    this.loading     = false;
+    this.searchTimer = null;
+  }
+
+  className() { return 'GamePickerModal Modal--medium'; }
+  title()     { return 'Link a Game'; }
+
+  content() {
+    const m = window.m;
+    return m('.Modal-body', [
+      m('.Form-group', [
+        m('input.FormControl', {
+          type:        'text',
+          placeholder: 'Search your game library...',
+          value:       this.query,
+          oncreate:    (vnode) => vnode.dom.focus(),
+          oninput:     (e) => {
+            this.query = e.target.value;
+            clearTimeout(this.searchTimer);
+            if (this.query.length < 1) { this.results = []; m.redraw(); return; }
+            this.searchTimer = setTimeout(() => this.search(), 300);
+          },
+        }),
+      ]),
+
+      this.loading && m('.GamePicker-loading', [m('i.fas.fa-spinner.fa-spin'), ' Searching...']),
+
+      this.results.length > 0
+        ? m('.GamePicker-results', this.results.map((game) => this.viewResult(game)))
+        : !this.loading && this.query.length >= 1
+          ? m('p.helpText', 'No games found.')
+          : m('p.helpText', 'Start typing to search your game library.'),
+    ]);
+  }
+
+  viewResult(game) {
+    const m        = window.m;
+    const selected = this.attrs.selected || [];
+    const isLinked = selected.some((g) => g.id === game.id);
+
+    return m('button.GamePicker-result' + (isLinked ? '.is-linked' : ''), {
+      key:     game.id,
+      onclick: () => {
+        if (!isLinked) {
+          this.attrs.onSelect(game);
+          app.modal.close();
+        }
+      },
+    }, [
+      game.cover_image_url
+        ? m('img.GamePicker-cover', { src: game.cover_image_url, alt: game.name })
+        : m('.GamePicker-noCover', m('i.fas.fa-gamepad')),
+      m('.GamePicker-info', [
+        m('.GamePicker-name', game.name),
+        game.release_year ? m('.GamePicker-year', game.release_year) : null,
+      ]),
+      isLinked ? m('.GamePicker-linked', m('i.fas.fa-check')) : null,
+    ]);
+  }
+
+  search() {
+    const m = window.m;
+    this.loading = true;
+    m.redraw();
+
+    app.request({
+      method: 'GET',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
+      params: { search: this.query, page: 1 },
+    }).then((response) => {
+      this.loading = false;
+      this.results = response.data || [];
+      m.redraw();
+    }).catch(() => {
+      this.loading = false;
+      this.results = [];
+      m.redraw();
+    });
+  }
 }
 
 // ─── Gamepedia Browse Page ────────────────────────────────────────────────────
@@ -91,7 +181,7 @@ class GamepediaPage extends Page {
 
     app.request({
       method: 'GET',
-      url: app.forum.attribute('apiUrl') + '/gamepedia/games',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
       params,
     }).then((response) => {
       this.loading    = false;
@@ -120,24 +210,24 @@ class GamepediaPage extends Page {
       m('.container', [
         m('.GamepediaFilters', [
           m('input.FormControl.GamepediaFilters-search', {
-            type: 'text',
+            type:        'text',
             placeholder: 'Search games...',
-            value: this.search,
-            oninput: (e) => {
+            value:       this.search,
+            oninput:     (e) => {
               this.search = e.target.value;
               clearTimeout(this.searchTimer);
               this.searchTimer = setTimeout(() => this.loadGames(1), 400);
             },
           }),
           m('select.FormControl.GamepediaFilters-genre', {
-            value: this.genre,
+            value:    this.genre,
             onchange: (e) => { this.genre = e.target.value; this.loadGames(1); },
           }, [
             m('option', { value: '' }, 'All Genres'),
             ...this.genres.map((g) => m('option', { value: g.slug, selected: this.genre === g.slug }, g.name)),
           ]),
           m('select.FormControl.GamepediaFilters-year', {
-            value: this.year,
+            value:    this.year,
             onchange: (e) => { this.year = e.target.value; this.loadGames(1); },
           }, [
             m('option', { value: '' }, 'All Years'),
@@ -180,7 +270,7 @@ class GamepediaPage extends Page {
       ]),
       m('.GameCard-info', [
         m('.GameCard-title', game.name),
-        game.release_year && m('.GameCard-year', game.release_year),
+        game.release_year ? m('.GameCard-year', game.release_year) : null,
       ]),
     ]);
   }
@@ -194,7 +284,7 @@ class GameDetailPage extends Page {
     this.game      = null;
     this.loading   = true;
     this.error     = null;
-    this.bodyClass = 'App--gamepedia App--gamepediaDetail';
+    this.bodyClass = 'App--gamepedia';
     this.loadGame(window.m.route.param('slug'));
   }
 
@@ -202,7 +292,7 @@ class GameDetailPage extends Page {
     const m = window.m;
     app.request({
       method: 'GET',
-      url: app.forum.attribute('apiUrl') + '/gamepedia/games/' + slug,
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/games/' + slug,
     }).then((response) => {
       this.loading = false;
       this.game    = response.data || null;
@@ -238,7 +328,6 @@ class GameDetailPage extends Page {
 
     return m('.GameDetailPage', [
 
-      // Hero
       m('.GameDetailHero', {
         style: game.cover_image_url
           ? 'background-image: url(' + game.cover_image_url.replace('cover_big', '1080p') + ')'
@@ -254,20 +343,17 @@ class GameDetailPage extends Page {
               ]),
               m('.GameDetailHero-info', [
                 m('h1.GameDetailHero-title', game.name),
-                game.release_date && m('p.GameDetailHero-date', [
-                  m('i.fas.fa-calendar-alt'), ' ', game.release_date,
-                ]),
-                game.developer && m('p.GameDetailHero-developer', [
+                game.release_date ? m('p.GameDetailHero-date', [m('i.fas.fa-calendar-alt'), ' ', game.release_date]) : null,
+                game.developer    ? m('p.GameDetailHero-developer', [
                   m('i.fas.fa-code'), ' ', game.developer,
-                  game.publisher && game.publisher !== game.developer
-                    ? [' / ', game.publisher] : null,
-                ]),
-                game.genres && game.genres.length > 0 && m('.GameDetailHero-genres',
+                  game.publisher && game.publisher !== game.developer ? [' / ', game.publisher] : null,
+                ]) : null,
+                game.genres && game.genres.length > 0 ? m('.GameDetailHero-genres',
                   game.genres.map((g) => m('a.GameDetailGenreTag', {
                     href:     app.route('gamepedia') + '?genre=' + g.slug,
                     oncreate: m.route.link,
                   }, g.name))
-                ),
+                ) : null,
                 m('a.Button.Button--primary.GameDetailHero-back', {
                   href:     app.route('gamepedia'),
                   oncreate: m.route.link,
@@ -278,11 +364,9 @@ class GameDetailPage extends Page {
         ]),
       ]),
 
-      // Body
       m('.container', [
         m('.GameDetailBody', [
           m('.GameDetailBody-main', [
-
             game.summary ? m('.GameDetailSection', [
               m('h3.GameDetailSection-title', 'About'),
               m('p.GameDetailSummary', game.summary),
@@ -292,12 +376,12 @@ class GameDetailPage extends Page {
               m('h3.GameDetailSection-title', 'Trailer'),
               m('.GameDetailTrailer', [
                 m('iframe', {
-                  src:            'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                  title:          game.name + ' trailer',
-                  allow:          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-                  referrerpolicy: 'strict-origin-when-cross-origin',
+                  src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                  title:           game.name + ' trailer',
+                  allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                  referrerpolicy:  'strict-origin-when-cross-origin',
                   allowfullscreen: true,
-                  frameborder:    '0',
+                  frameborder:     '0',
                 }),
               ]),
             ]) : null,
@@ -308,34 +392,20 @@ class GameDetailPage extends Page {
                 game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
                   key:     s.id,
                   href:    '#',
-                  onclick: (e) => {
-                    e.preventDefault();
-                    openLightbox(game.screenshots, idx);
-                  },
+                  onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
                 }, [
                   m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
                 ]))
               ),
             ]) : null,
-
           ]),
 
           m('.GameDetailBody-sidebar', [
-
             m('.GameDetailInfoCard', [
               m('h3.GameDetailInfoCard-title', 'Game Info'),
-              game.developer ? m('.GameDetailInfoCard-row', [
-                m('span.GameDetailInfoCard-label', 'Developer'),
-                m('span.GameDetailInfoCard-value', game.developer),
-              ]) : null,
-              game.publisher ? m('.GameDetailInfoCard-row', [
-                m('span.GameDetailInfoCard-label', 'Publisher'),
-                m('span.GameDetailInfoCard-value', game.publisher),
-              ]) : null,
-              game.release_date ? m('.GameDetailInfoCard-row', [
-                m('span.GameDetailInfoCard-label', 'Released'),
-                m('span.GameDetailInfoCard-value', game.release_date),
-              ]) : null,
+              game.developer  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])  : null,
+              game.publisher  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])  : null,
+              game.release_date ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Released'),  m('span.GameDetailInfoCard-value', game.release_date)]) : null,
               game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
                 m('span.GameDetailInfoCard-label', 'Genres'),
                 m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
@@ -357,7 +427,6 @@ class GameDetailPage extends Page {
                   )
                 : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
             ]),
-
           ]),
         ]),
       ]),
@@ -365,20 +434,110 @@ class GameDetailPage extends Page {
   }
 }
 
+// ─── Composer Game Linking ────────────────────────────────────────────────────
+
+// Helper to get/init the linked games list on a composer instance
+function getLinkedGames(composer) {
+  if (!composer.fields.gamepediaGames) {
+    composer.fields.gamepediaGames = [];
+  }
+  return composer.fields.gamepediaGames;
+}
+
+function openGamePicker(composer) {
+  const linked = getLinkedGames(composer);
+  const max    = parseInt(app.forum.attribute('gamepedia.max_games_per_discussion') || 3);
+
+  if (linked.length >= max) {
+    app.alerts.show({ type: 'error' }, 'You can only link up to ' + max + ' game(s) per discussion.');
+    return;
+  }
+
+  app.modal.show(GamePickerModal, {
+    selected: linked,
+    onSelect: (game) => {
+      if (!linked.some((g) => g.id === game.id)) {
+        linked.push(game);
+        window.m.redraw();
+      }
+    },
+  });
+}
+
+// Render linked game chips below the composer footer
+function viewGameChips(composer) {
+  const m      = window.m;
+  const linked = getLinkedGames(composer);
+  if (linked.length === 0) return null;
+
+  return m('.GamepediaComposer-chips',
+    linked.map((game) => m('.GamepediaComposer-chip', { key: game.id }, [
+      game.cover_image_url
+        ? m('img', { src: game.cover_image_url, alt: game.name })
+        : m('i.fas.fa-gamepad'),
+      m('span', game.name),
+      m('button.GamepediaComposer-chip-remove', {
+        title:   'Remove',
+        onclick: () => {
+          const idx = linked.indexOf(game);
+          if (idx > -1) { linked.splice(idx, 1); m.redraw(); }
+        },
+      }, '✕'),
+    ]))
+  );
+}
+
 // ─── Initializer ─────────────────────────────────────────────────────────────
 
 app.initializers.add('resofire-gamepedia', function () {
+  // Forum routes
   app.routes['gamepedia']      = { path: '/gamepedia',       component: GamepediaPage };
   app.routes['gamepedia.game'] = { path: '/gamepedia/:slug', component: GameDetailPage };
 
+  // Sidenav link
   extend(IndexPage.prototype, 'navItems', function (items) {
-    items.add(
-      'gamepedia',
-      m(LinkButton, {
-        href: app.route('gamepedia'),
-        icon: 'fas fa-gamepad',
-      }, 'Gamepedia'),
-      80
-    );
+    items.add('gamepedia', m(LinkButton, {
+      href: app.route('gamepedia'),
+      icon: 'fas fa-gamepad',
+    }, 'Gamepedia'), 80);
+  });
+
+  // Add gamepad button to the TextEditor toolbar
+  extend(TextEditor.prototype, 'toolbarItems', function (items) {
+    const composer = this.attrs.composer;
+    if (!composer) return;
+
+    items.add('gamepedia', m('button.Button.Button--icon.Button--link', {
+      title:   'Link a game',
+      onclick: () => openGamePicker(composer),
+    }, m('i.fas.fa-gamepad')), -10);
+  });
+
+  // Inject game chips into DiscussionComposer footer
+  extend(DiscussionComposer.prototype, 'headerItems', function (items) {
+    const chips = viewGameChips(this.composer);
+    if (chips) items.add('gamepediaChips', chips, -100);
+  });
+
+  // Inject game chips into ReplyComposer footer
+  extend(ReplyComposer.prototype, 'headerItems', function (items) {
+    const chips = viewGameChips(this.composer);
+    if (chips) items.add('gamepediaChips', chips, -100);
+  });
+
+  // Send linked game IDs with discussion creation
+  extend(DiscussionComposer.prototype, 'data', function (data) {
+    const linked = getLinkedGames(this.composer);
+    if (linked.length > 0) {
+      data.gamepediaGameIds = linked.map((g) => g.id);
+    }
+  });
+
+  // Send linked game IDs with reply creation
+  extend(ReplyComposer.prototype, 'data', function (data) {
+    const linked = getLinkedGames(this.composer);
+    if (linked.length > 0) {
+      data.gamepediaGameIds = linked.map((g) => g.id);
+    }
   });
 });

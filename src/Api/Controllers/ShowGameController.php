@@ -19,7 +19,7 @@ class ShowGameController implements RequestHandlerInterface
             return new JsonResponse(['error' => 'Permission denied.'], 403);
         }
 
-        $slug = $request->getAttribute('slug');
+        $slug = $request->getQueryParams()['slug'] ?? '';
         $game = Game::with(['genres', 'screenshots'])
                     ->where('slug', $slug)
                     ->first();

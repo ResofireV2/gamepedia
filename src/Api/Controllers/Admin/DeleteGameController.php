@@ -16,7 +16,7 @@ class DeleteGameController implements RequestHandlerInterface
         $actor = RequestUtil::getActor($request);
         $actor->assertAdmin();
 
-        $id   = $request->getAttribute('id');
+        $id   = $request->getQueryParams()['id'] ?? null;
         $game = Game::find($id);
 
         if (!$game) {

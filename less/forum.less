@@ -126,7 +126,253 @@
   color: #888;
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+// ── Game Detail Page ──────────────────────────────────────────────────────────
+
+.GameDetailPage {
+  padding-bottom: 60px;
+}
+
+.GameDetail-loading {
+  text-align: center;
+  padding: 60px;
+  color: #888;
+}
+
+// Hero section with blurred background
+.GameDetailHero {
+  background-color: #1a1a2e;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  min-height: 280px;
+}
+
+.GameDetailHero-overlay {
+  background: linear-gradient(to bottom, rgba(10,10,20,0.7) 0%, rgba(10,10,20,0.92) 100%);
+  padding: 40px 0;
+}
+
+.GameDetailHero-content {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.GameDetailHero-cover {
+  flex-shrink: 0;
+  width: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+
+  img {
+    width: 100%;
+    display: block;
+  }
+
+  .GameDetailHero-noCover {
+    width: 140px;
+    height: 186px;
+    background: #2a2a3e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3em;
+    color: #444;
+  }
+}
+
+.GameDetailHero-info {
+  flex: 1;
+  color: #fff;
+
+  .GameDetailHero-title {
+    margin: 0 0 12px;
+    font-size: 2em;
+    line-height: 1.2;
+  }
+
+  .GameDetailHero-date,
+  .GameDetailHero-developer {
+    margin: 4px 0;
+    opacity: 0.8;
+    font-size: 0.95em;
+
+    i { margin-right: 6px; opacity: 0.7; }
+  }
+
+  .GameDetailHero-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+  }
+
+  .GameDetailHero-back {
+    margin-top: 16px;
+
+    i { margin-right: 6px; }
+  }
+}
+
+.GameDetailGenreTag {
+  display: inline-block;
+  padding: 3px 10px;
+  background: rgba(233,69,96,0.25);
+  border: 1px solid rgba(233,69,96,0.5);
+  color: #e94560;
+  border-radius: 12px;
+  font-size: 0.8em;
+  text-decoration: none;
+
+  &:hover {
+    background: rgba(233,69,96,0.4);
+    text-decoration: none;
+  }
+}
+
+// Main body layout
+.GameDetailBody {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 30px;
+  margin-top: 30px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.GameDetailSection {
+  margin-bottom: 30px;
+
+  .GameDetailSection-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 0 0 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--control-bg);
+  }
+}
+
+.GameDetailSummary {
+  line-height: 1.7;
+  color: var(--muted-color);
+}
+
+// Trailer
+.GameDetailTrailer {
+  position: relative;
+  padding-top: 56.25%; // 16:9
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+
+  iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+// Screenshots grid
+.GameDetailScreenshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.GameDetailScreenshot {
+  display: block;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.03);
+  }
+}
+
+// Sidebar info card
+.GameDetailInfoCard {
+  background: var(--control-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+
+  .GameDetailInfoCard-title {
+    font-size: 1em;
+    font-weight: bold;
+    margin: 0 0 12px;
+  }
+
+  .GameDetailInfoCard-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(128,128,128,0.1);
+    font-size: 0.9em;
+
+    &:last-child { border-bottom: none; }
+  }
+
+  .GameDetailInfoCard-label {
+    color: var(--muted-color);
+    flex-shrink: 0;
+  }
+
+  .GameDetailInfoCard-value {
+    text-align: right;
+  }
+}
+
+// Related discussions
+.GameDetailDiscussions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.GameDetailDiscussion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--control-bg);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.9em;
+
+  &:hover {
+    background: var(--control-bg-active, #e8e8e8);
+    text-decoration: none;
+  }
+
+  .GameDetailDiscussion-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .GameDetailDiscussion-meta {
+    flex-shrink: 0;
+    color: var(--muted-color);
+    margin-left: 10px;
+    font-size: 0.85em;
+  }
+}
 
 .GamepediaPagination {
   display: flex;

@@ -52,12 +52,11 @@ class IgdbService
         fields id, name, cover.image_id, first_release_date,
                involved_companies.company.name, involved_companies.developer,
                involved_companies.publisher;
-        where version_parent = null & category = 0;
         limit {$limit};
         APICALYPSE;
 
-        // category = 0 means main games only (excludes DLC, expansions, etc.)
-        // version_parent = null excludes special editions
+        // Note: IGDB's search keyword does not work reliably with where filters
+        // so we let IGDB return its best matches and the admin picks what to add.
 
         $results = $this->request('/games', $body);
 

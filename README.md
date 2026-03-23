@@ -1,0 +1,2 @@
+# gamepedia
+A simple test

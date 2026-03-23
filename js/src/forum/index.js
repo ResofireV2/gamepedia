@@ -109,10 +109,11 @@ class GamePickerModal extends Modal {
 
     return m('button.GamePicker-result' + (isLinked ? '.is-linked' : ''), {
       key:     game.id,
-      onclick: () => {
+      onclick: (e) => {
+        e.preventDefault();
         if (!isLinked) {
           this.attrs.onSelect(game);
-          app.modal.close();
+          this.hide();
         }
       },
     }, [

@@ -9,24 +9,25 @@ use Resofire\Gamepedia\Models\Game;
 class SaveGameLinks
 {
     /**
-     * When a new discussion is saved, link any gamepediaGameIds from the request.
+     * When a new discussion is being saved, stash the game IDs in a static
+     * registry keyed by object hash. We cannot set them on the model itself
+     * because Eloquent will try to INSERT any public property that looks like
+     * an attribute, which causes a "Column not found" error.
      */
+    public static array $pendingDiscussionGames = [];
+    public static array $pendingPostGames       = [];
+
     public function onDiscussionSaving(DiscussionSaving $event): void
     {
         $ids = $event->data['attributes']['gamepediaGameIds'] ?? null;
         if (!is_array($ids) || empty($ids)) return;
 
-        // Only link on creation, not edits
+        // Only on creation
         if ($event->discussion->exists) return;
 
-        // We can't sync yet — discussion doesn't have an ID before save.
-        // Store on the model for SaveGameLinksAfterCreate to pick up.
-        $event->discussion->gamepediaGameIds = array_map('intval', $ids);
+        self::$pendingDiscussionGames[spl_object_id($event->discussion)] = array_map('intval', $ids);
     }
 
-    /**
-     * When a new reply post is saved, link games to its discussion.
-     */
     public function onPostSaving(PostSaving $event): void
     {
         $ids = $event->data['attributes']['gamepediaGameIds'] ?? null;
@@ -35,6 +36,6 @@ class SaveGameLinks
         $post = $event->post;
         if ($post->exists || $post->type !== 'comment') return;
 
-        $post->gamepediaGameIds = array_map('intval', $ids);
+        self::$pendingPostGames[spl_object_id($post)] = array_map('intval', $ids);
     }
 }

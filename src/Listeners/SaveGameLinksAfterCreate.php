@@ -8,27 +8,27 @@ use Resofire\Gamepedia\Models\Game;
 
 class SaveGameLinksAfterCreate
 {
-    /**
-     * After a discussion is created, sync the game links.
-     * At this point the discussion has an ID we can use.
-     */
     public function onDiscussionStarted(DiscussionStarted $event): void
     {
         $discussion = $event->discussion;
-        $ids = $discussion->gamepediaGameIds ?? null;
+        $key  = spl_object_id($discussion);
+        $ids  = SaveGameLinks::$pendingDiscussionGames[$key] ?? null;
+
         if (!$ids) return;
 
+        unset(SaveGameLinks::$pendingDiscussionGames[$key]);
         $this->linkGames($discussion, $ids);
     }
 
-    /**
-     * After a reply is posted, sync the game links to its discussion.
-     */
     public function onPosted(Posted $event): void
     {
         $post = $event->post;
-        $ids  = $post->gamepediaGameIds ?? null;
+        $key  = spl_object_id($post);
+        $ids  = SaveGameLinks::$pendingPostGames[$key] ?? null;
+
         if (!$ids) return;
+
+        unset(SaveGameLinks::$pendingPostGames[$key]);
 
         $discussion = $post->discussion;
         if ($discussion) {

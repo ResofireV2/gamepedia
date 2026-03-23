@@ -123,6 +123,8 @@ class AddGameModal extends Modal {
       this.error = response.error || null;
       if (!response.error) {
         this.added[game.igdb_id] = true;
+        // Notify the page to refresh its game list
+        if (this.attrs.onGameAdded) this.attrs.onGameAdded();
       }
       m.redraw();
     }).catch((e) => {
@@ -137,9 +139,37 @@ class AddGameModal extends Modal {
 // ─── Gamepedia Admin Page ─────────────────────────────────────────────────────
 
 class GamepediaPage extends ExtensionPage {
+  oninit(vnode) {
+    super.oninit(vnode);
+    this.games        = [];
+    this.gamesLoading = true;
+    this.gamesError   = null;
+    this.deleting     = {};
+    this.loadGames();
+  }
+
+  loadGames() {
+    const m = window.m;
+    this.gamesLoading = true;
+
+    app.request({
+      method: 'GET',
+      url: app.forum.attribute('apiUrl') + '/gamepedia/admin/games',
+    }).then((response) => {
+      this.gamesLoading = false;
+      this.games        = response.data || [];
+      m.redraw();
+    }).catch(() => {
+      this.gamesLoading = false;
+      this.gamesError   = 'Failed to load game library.';
+      m.redraw();
+    });
+  }
+
   content() {
     const m = window.m;
     return [
+      // ── Settings ──────────────────────────────────────────────────────────
       m('.ExtensionPage-settings', [
         m('.container', [
           m('.Form', [
@@ -182,16 +212,74 @@ class GamepediaPage extends ExtensionPage {
         ]),
       ]),
 
+      // ── Game Library ──────────────────────────────────────────────────────
       m('.ExtensionPage-settings', [
         m('.container', [
-          m('h3', 'Game Library'),
-          m('p.helpText', 'Add games from IGDB to your Gamepedia.'),
-          m('button.Button.Button--primary', {
-            onclick: () => app.modal.show(AddGameModal),
-          }, [m('i.fas.fa-plus'), ' Add Game']),
+          m('.GameLibrary-header', [
+            m('h3', 'Game Library'),
+            m('button.Button.Button--primary', {
+              onclick: () => app.modal.show(AddGameModal, {
+                onGameAdded: () => this.loadGames(),
+              }),
+            }, [m('i.fas.fa-plus'), ' Add Game']),
+          ]),
+
+          this.gamesLoading && m('p', [m('i.fas.fa-spinner.fa-spin'), ' Loading...']),
+          this.gamesError   && m('.Alert.Alert--error', this.gamesError),
+
+          !this.gamesLoading && this.games.length === 0 && m('p.helpText', 'No games added yet. Click Add Game to get started.'),
+
+          !this.gamesLoading && this.games.length > 0 && m('.GameLibrary-list',
+            this.games.map((game) => this.viewGame(game))
+          ),
         ]),
       ]),
     ];
+  }
+
+  viewGame(game) {
+    const m         = window.m;
+    const isDeleting = !!this.deleting[game.id];
+
+    return m('.GameLibrary-item', { key: game.id }, [
+      m('.GameLibrary-cover', [
+        game.cover_image_url
+          ? m('img', { src: game.cover_image_url, alt: game.name })
+          : m('.GameLibrary-noCover', m('i.fas.fa-gamepad')),
+      ]),
+      m('.GameLibrary-info', [
+        m('strong', game.name),
+        game.release_year ? m('span.GameLibrary-year', ' (' + game.release_year + ')') : null,
+        game.developer    ? m('div', m('small', 'Dev: ' + game.developer))             : null,
+      ]),
+      m('.GameLibrary-actions', [
+        m('button.Button.Button--danger', {
+          disabled: isDeleting,
+          onclick: () => this.deleteGame(game),
+        }, isDeleting ? [m('i.fas.fa-spinner.fa-spin'), ' Deleting...'] : [m('i.fas.fa-trash'), ' Delete']),
+      ]),
+    ]);
+  }
+
+  deleteGame(game) {
+    const m = window.m;
+    if (!confirm('Delete "' + game.name + '" from your Gamepedia? This cannot be undone.')) return;
+
+    this.deleting[game.id] = true;
+    m.redraw();
+
+    app.request({
+      method: 'DELETE',
+      url: app.forum.attribute('apiUrl') + '/gamepedia/admin/games/' + game.id,
+    }).then(() => {
+      this.deleting[game.id] = false;
+      this.games = this.games.filter((g) => g.id !== game.id);
+      m.redraw();
+    }).catch(() => {
+      this.deleting[game.id] = false;
+      app.alerts.show({ type: 'error' }, 'Failed to delete game.');
+      m.redraw();
+    });
   }
 
   saveSettings() {

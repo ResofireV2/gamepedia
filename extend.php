@@ -1,10 +1,11 @@
 <?php
 
-namespace Resofire\Gamepedia;
-
 use Flarum\Extend;
+use Resofire\Gamepedia\GamepediaServiceProvider;
 use Resofire\Gamepedia\Api\Controllers\Admin\IgdbSearchController;
 use Resofire\Gamepedia\Api\Controllers\Admin\ImportGameController;
+use Resofire\Gamepedia\Api\Controllers\Admin\ListGamesController;
+use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGameController;
 
 return [
     (new Extend\ServiceProvider())
@@ -26,5 +27,7 @@ return [
     // Admin API routes
     (new Extend\Routes('api'))
         ->get('/gamepedia/admin/igdb-search', 'gamepedia.admin.igdb-search', IgdbSearchController::class)
-        ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class),
+        ->get('/gamepedia/admin/games', 'gamepedia.admin.games.index', ListGamesController::class)
+        ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class)
+        ->delete('/gamepedia/admin/games/{id}', 'gamepedia.admin.games.delete', DeleteGameController::class),
 ];

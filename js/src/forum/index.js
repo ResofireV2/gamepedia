@@ -169,7 +169,7 @@ class GamepediaPage extends Page {
     this.search      = window.m.route.param('search') || '';
     this.genre       = window.m.route.param('genre')  || '';
     this.year        = window.m.route.param('year')   || '';
-    this.bodyClass   = 'App--gamepedia App--index';
+    this.bodyClass   = 'App--gamepedia';
     this.loadGames();
   }
 
@@ -271,7 +271,7 @@ class GameDetailPage extends Page {
     this.game      = null;
     this.loading   = true;
     this.error     = null;
-    this.bodyClass = 'App--gamepedia App--index';
+    this.bodyClass = 'App--gamepedia';
     this.loadGame(window.m.route.param('slug'));
   }
 

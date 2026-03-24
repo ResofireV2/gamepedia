@@ -177,10 +177,10 @@ class GamepediaPage extends Page {
   view() {
     const m = window.m;
     return m('.IndexPage.GamepediaPage', [
-      m('.hero.GamepediaHero', [
+      m('header.Hero.GamepediaHero', [
         m('.container', [
-          m('h2.GamepediaHero-title', [m('i.fas.fa-gamepad'), ' Gamepedia']),
-          m('p.GamepediaHero-subtitle', 'Browse the game library'),
+          m('h1.Hero-title', [m('i.fas.fa-gamepad'), ' Gamepedia']),
+          m('p.Hero-subtitle', 'Browse the game library'),
         ]),
       ]),
       m('.container', [

@@ -1,26 +1,11 @@
 // Gamepedia forum styles
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
+// Uses Flarum's standard Hero styles (--hero-bg, --hero-color) — no overrides needed.
+// Just add a bottom margin to space it from the content below.
 
 .GamepediaHero {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
-  padding: 40px 0;
-  margin-bottom: 30px;
-
-  .GamepediaHero-title {
-    margin: 0 0 8px;
-    font-size: 2em;
-    color: #e94560;
-
-    i { margin-right: 10px; }
-  }
-
-  .GamepediaHero-subtitle {
-    margin: 0;
-    opacity: 0.7;
-    font-size: 1.1em;
-  }
+  margin-bottom: 0;
 }
 
 // ── Filters ───────────────────────────────────────────────────────────────────
@@ -148,7 +133,6 @@
   background-size: cover;
   background-position: center;
   position: relative;
-  min-height: 280px;
 }
 
 .GameDetailHero-overlay {
@@ -222,15 +206,16 @@
 .GameDetailGenreTag {
   display: inline-block;
   padding: 3px 10px;
-  background: rgba(233,69,96,0.25);
-  border: 1px solid rgba(233,69,96,0.5);
-  color: #e94560;
+  background: var(--primary-025, rgba(83,111,144,0.15));
+  border: 1px solid var(--primary-050, rgba(83,111,144,0.3));
+  color: var(--primary-color);
   border-radius: 12px;
   font-size: 0.8em;
   text-decoration: none;
 
   &:hover {
-    background: rgba(233,69,96,0.4);
+    background: var(--primary-050, rgba(83,111,144,0.3));
+    color: var(--primary-color);
     text-decoration: none;
   }
 }

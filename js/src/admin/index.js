@@ -131,6 +131,7 @@ class EditGenreModal extends Modal {
       ]),
       m('.Form-group', [
         m('button.Button.Button--primary', {
+          type:     'button',
           disabled: this.saving || !this.name.trim(),
           onclick:  () => this.save(),
         }, this.saving ? [m('i.fas.fa-spinner.fa-spin'), ' Saving...'] : 'Save'),
@@ -204,6 +205,7 @@ class EditGameGenresModal extends Modal {
       ),
       m('.Form-group', { style: 'margin-top: 15px' }, [
         m('button.Button.Button--primary', {
+          type:     'button',
           disabled: this.saving,
           onclick:  () => this.save(),
         }, this.saving ? [m('i.fas.fa-spinner.fa-spin'), ' Saving...'] : 'Save Genres'),

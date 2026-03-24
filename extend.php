@@ -3,8 +3,6 @@
 use Flarum\Extend;
 use Flarum\Discussion\Event\Saving as DiscussionSaving;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
-use Flarum\Post\Event\Saving as PostSaving;
-use Flarum\Post\Event\Posted;
 use Flarum\Api\Serializer\ForumSerializer;
 use Flarum\Api\Serializer\DiscussionSerializer;
 use Flarum\Discussion\Discussion;
@@ -79,7 +77,5 @@ return [
     // Game linking events
     (new Extend\Event())
         ->listen(DiscussionSaving::class,  [SaveGameLinks::class, 'onDiscussionSaving'])
-        ->listen(PostSaving::class,        [SaveGameLinks::class, 'onPostSaving'])
-        ->listen(DiscussionStarted::class, [SaveGameLinksAfterCreate::class, 'onDiscussionStarted'])
-        ->listen(Posted::class,            [SaveGameLinksAfterCreate::class, 'onPosted']),
+        ->listen(DiscussionStarted::class, [SaveGameLinksAfterCreate::class, 'onDiscussionStarted']),
 ];

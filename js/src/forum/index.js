@@ -6,7 +6,6 @@ import Page from 'flarum/common/components/Page';
 import Modal from 'flarum/common/components/Modal';
 import TextEditor from 'flarum/common/components/TextEditor';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
-import ReplyComposer from 'flarum/forum/components/ReplyComposer';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
 import DiscussionHero from 'flarum/forum/components/DiscussionHero';
 import DiscussionPage from 'flarum/forum/components/DiscussionPage';
@@ -627,9 +626,10 @@ app.initializers.add('resofire-gamepedia', function () {
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'G') {
       e.preventDefault();
-      const composer = app.composer?.state;
+      const composer = app.composer;
       if (composer && composer.isVisible()) {
         if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
+        if (!(composer.body.componentClass?.prototype instanceof DiscussionComposer)) return;
         openGamePicker(composer);
       }
     }
@@ -649,11 +649,13 @@ app.initializers.add('resofire-gamepedia', function () {
     items.add('gamepediaGames', window.m(GameCardSlideshow, { games }), 50);
   });
 
-  // Add gamepad button to the TextEditor toolbar — only if user can link games
+  // Add gamepad button to the TextEditor toolbar — only for new discussions, not replies
   extend(TextEditor.prototype, 'toolbarItems', function (items) {
     const composer = this.attrs.composer;
     if (!composer) return;
     if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
+    // Only show on DiscussionComposer, not ReplyComposer or EditPostComposer
+    if (!(composer.body.componentClass?.prototype instanceof DiscussionComposer)) return;
 
     items.add('gamepedia', m('button.Button.Button--icon.Button--link', {
       title:   'Link a game',
@@ -661,30 +663,15 @@ app.initializers.add('resofire-gamepedia', function () {
     }, m('i.fas.fa-gamepad')), -10);
   });
 
-  // Inject game chips into DiscussionComposer footer
+  // Inject game chips into DiscussionComposer only
   extend(DiscussionComposer.prototype, 'headerItems', function (items) {
     if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
     if (chips) items.add('gamepediaChips', chips, -100);
   });
 
-  // Inject game chips into ReplyComposer footer
-  extend(ReplyComposer.prototype, 'headerItems', function (items) {
-    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
-    const chips = viewGameChips(this.composer);
-    if (chips) items.add('gamepediaChips', chips, -100);
-  });
-
-  // Send linked game IDs with discussion creation
+  // Send linked game IDs with discussion creation only
   extend(DiscussionComposer.prototype, 'data', function (data) {
-    const linked = getLinkedGames(this.composer);
-    if (linked.length > 0) {
-      data.gamepediaGameIds = linked.map((g) => g.id);
-    }
-  });
-
-  // Send linked game IDs with reply creation
-  extend(ReplyComposer.prototype, 'data', function (data) {
     const linked = getLinkedGames(this.composer);
     if (linked.length > 0) {
       data.gamepediaGameIds = linked.map((g) => g.id);

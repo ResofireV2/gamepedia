@@ -9,6 +9,7 @@ import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import ReplyComposer from 'flarum/forum/components/ReplyComposer';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
 import DiscussionHero from 'flarum/forum/components/DiscussionHero';
+import DiscussionPage from 'flarum/forum/components/DiscussionPage';
 import SelectDropdown from 'flarum/common/components/SelectDropdown';
 import listItems from 'flarum/common/helpers/listItems';
 
@@ -564,24 +565,34 @@ app.initializers.add('resofire-gamepedia', function () {
   // Game badges on discussion list items — DISABLED (Stage 12 decision: list badges off by default)
   // extend(DiscussionListItem.prototype, 'infoItems', ...)
 
-  // Game badges on discussion hero (discussion page)
-  extend(DiscussionHero.prototype, 'items', function (items) {
-    const games = this.attrs.discussion.attribute('gamepediaGames');
+  // Game cards in discussion sidebar — between controls (Reply/Follow) and scrubber
+  extend(DiscussionPage.prototype, 'sidebarItems', function (items) {
+    const discussion = this.discussion;
+    if (!discussion) return;
+
+    const games = discussion.attribute('gamepediaGames');
     if (!games || games.length === 0) return;
 
-    items.add('gamepediaGames', m('.GameBadges',
-      games.map((game) => m('a.GameBadge', {
-        key:      game.id,
-        href:     app.route('gamepedia.game', { slug: game.slug }),
-        title:    game.name,
-        oncreate: m.route.link,
-      }, [
-        game.cover_image_url
-          ? m('img.GameBadge-cover', { src: game.cover_image_url, alt: game.name })
-          : m('i.fas.fa-gamepad'),
-        m('span.GameBadge-name', game.name),
-      ]))
-    ), 5);
+    const m = window.m;
+    items.add('gamepediaGames',
+      m('.DiscussionGameCards',
+        games.map((game) => m('a.DiscussionGameCard', {
+          key:      game.id,
+          href:     app.route('gamepedia.game', { slug: game.slug }),
+          oncreate: m.route.link,
+        }, [
+          m('.DiscussionGameCard-cover', [
+            game.cover_image_url
+              ? m('img', { src: game.cover_image_url, alt: game.name })
+              : m('.DiscussionGameCard-noCover', m('i.fas.fa-gamepad')),
+          ]),
+          m('.DiscussionGameCard-info', [
+            m('.DiscussionGameCard-name', game.name),
+            game.release_year ? m('.DiscussionGameCard-year', game.release_year) : null,
+          ]),
+        ]))
+      ),
+    50);
   });
 
   // Add gamepad button to the TextEditor toolbar — only if user can link games

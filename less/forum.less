@@ -601,71 +601,80 @@
   }
 }
 
-// ── Discussion Game Badges ────────────────────────────────────────────────────
+// ── Discussion Sidebar Game Cards ─────────────────────────────────────────────
 
-.GameBadges {
+.DiscussionGameCards {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0;
 }
 
-.GameBadge {
-  display: inline-flex;
+.DiscussionGameCard {
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 5px;
-  background: var(--control-bg);
-  border-radius: 4px;
-  padding: 2px 8px 2px 2px;
-  font-size: 0.8em;
+  gap: 10px;
+  border-radius: 8px;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
+  background: var(--control-bg);
   border: 1px solid rgba(128,128,128,0.15);
-  max-width: 160px;
+  transition: border-color 0.15s;
 
   &:hover {
-    background: var(--control-bg-active, #e0e0e0);
+    border-color: var(--primary-color);
     text-decoration: none;
     color: inherit;
   }
+}
 
-  .GameBadge-cover {
-    width: 20px;
-    height: 26px;
+.DiscussionGameCard-cover {
+  flex-shrink: 0;
+  width: 48px;
+  height: 64px;
+  overflow: hidden;
+  background: #ddd;
+
+  img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 2px;
-    flex-shrink: 0;
+    display: block;
   }
 
-  i.fas.fa-gamepad {
-    width: 20px;
-    text-align: center;
-    color: #888;
-    font-size: 0.9em;
-  }
-
-  .GameBadge-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .DiscussionGameCard-noCover {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 1.2em;
   }
 }
 
-// In the discussion hero, make badges slightly larger
-.DiscussionHero .GameBadge {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.2);
-  color: #fff;
-  padding: 3px 10px 3px 3px;
+.DiscussionGameCard-info {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px 4px 0;
+  text-align: left;
+}
+
+.DiscussionGameCard-name {
   font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 
-  &:hover {
-    background: rgba(255,255,255,0.25);
-    color: #fff;
-  }
-
-  .GameBadge-cover {
-    width: 24px;
-    height: 32px;
-  }
+.DiscussionGameCard-year {
+  font-size: 0.75em;
+  color: var(--muted-color, #888);
+  margin-top: 2px;
 }

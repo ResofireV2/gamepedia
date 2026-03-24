@@ -173,6 +173,10 @@ class GamepediaPage extends Page {
     this.loadGames();
   }
 
+  sidebarItems() {
+    return IndexPage.prototype.sidebarItems();
+  }
+
   view() {
     const m = window.m;
     return m('.IndexPage.GamepediaPage', [
@@ -185,7 +189,7 @@ class GamepediaPage extends Page {
       m('.container', [
         m('.sideNavContainer', [
           m('nav.IndexPage-nav.sideNav', [
-            m('ul', listItems(IndexPage.prototype.sidebarItems().toArray())),
+            m('ul', listItems(this.sidebarItems().toArray())),
           ]),
           m('.sideNavOffset', [this.viewContent()]),
         ]),
@@ -291,6 +295,10 @@ class GameDetailPage extends Page {
     });
   }
 
+  sidebarItems() {
+    return IndexPage.prototype.sidebarItems();
+  }
+
   view() {
     const m = window.m;
 
@@ -298,7 +306,7 @@ class GameDetailPage extends Page {
       return m('.IndexPage.GameDetailPage', [
         m('.container', [
           m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
             m('.sideNavOffset', m('.GameDetail-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading...'])),
           ]),
         ]),
@@ -309,7 +317,7 @@ class GameDetailPage extends Page {
       return m('.IndexPage.GameDetailPage', [
         m('.container', [
           m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
             m('.sideNavOffset', [
               m('.Alert.Alert--error', this.error || 'Game not found.'),
               m('a.Button', { href: app.route('gamepedia'), oncreate: m.route.link }, [
@@ -363,7 +371,7 @@ class GameDetailPage extends Page {
 
       m('.container', [
         m('.sideNavContainer', [
-          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
           m('.sideNavOffset', [
             m('.GameDetailBody', [
               m('.GameDetailBody-main', [

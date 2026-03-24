@@ -539,8 +539,8 @@ class GameCardSlideshow {
   oninit(vnode) {
     this.games    = vnode.attrs.games;
     this.current  = 0;
-    this.tick     = 0; // incremented each cycle to force CSS animation restart
-    this.timer    = null;
+    this.rafId    = null;
+    this.barEl    = null; // direct DOM reference to progress bar
   }
 
   oncreate() {
@@ -548,7 +548,7 @@ class GameCardSlideshow {
   }
 
   onremove() {
-    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
   }
 
   getDuration() {
@@ -557,17 +557,31 @@ class GameCardSlideshow {
 
   startCycle() {
     const duration = this.getDuration();
-    this.timer = setInterval(() => {
-      this.current = (this.current + 1) % this.games.length;
-      this.tick++;
-      window.m.redraw();
-    }, duration);
+    let start = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - start;
+      const pct = Math.min((elapsed / duration) * 100, 100);
+
+      // Write progress directly to DOM — no Mithril redraw needed
+      if (this.barEl) this.barEl.style.width = pct + '%';
+
+      if (elapsed >= duration) {
+        this.current = (this.current + 1) % this.games.length;
+        start = performance.now();
+        window.m.redraw(); // only redraw when card actually changes
+        // barEl reference will be refreshed by onupdate after redraw
+      }
+
+      this.rafId = requestAnimationFrame(tick);
+    };
+
+    this.rafId = requestAnimationFrame(tick);
   }
 
   view() {
     const m    = window.m;
     const game = this.games[this.current];
-    const dur  = this.getDuration();
 
     return m('a.DiscussionGameCard', {
       href:     app.route('gamepedia.game', { slug: game.slug }),
@@ -584,18 +598,8 @@ class GameCardSlideshow {
       ]),
       this.games.length > 1 && m('.DiscussionGameCard-progress', [
         m('.DiscussionGameCard-progress-bar', {
-          style:    { animationDuration: dur + 'ms' },
-          oncreate: (vnode) => {
-            // Force animation restart by triggering a reflow
-            vnode.dom.style.animation = 'none';
-            vnode.dom.offsetHeight; // reflow
-            vnode.dom.style.animation = '';
-          },
-          onupdate: (vnode) => {
-            vnode.dom.style.animation = 'none';
-            vnode.dom.offsetHeight; // reflow
-            vnode.dom.style.animation = '';
-          },
+          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
+          onupdate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
         }),
       ]),
     ]);

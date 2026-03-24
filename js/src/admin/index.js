@@ -86,7 +86,16 @@ class AddGameModal extends Modal {
       .then((r) => {
         this.adding[game.igdb_id] = false;
         this.error = r.error || null;
-        if (!r.error) { this.added[game.igdb_id] = true; if (this.attrs.onGameAdded) this.attrs.onGameAdded(); }
+        if (!r.error) {
+          this.added[game.igdb_id] = true;
+          if (this.attrs.onGameAdded) this.attrs.onGameAdded();
+          // Open genre picker for the newly imported game
+          app.modal.show(EditGameGenresModal, {
+            game:          r.data,
+            currentGenres: [],
+            onSaved:       () => { if (this.attrs.onGameAdded) this.attrs.onGameAdded(); },
+          });
+        }
         m.redraw();
       })
       .catch((e) => { this.adding[game.igdb_id] = false; this.error = (e.response?.json?.error) || 'Failed to add game.'; m.redraw(); });
@@ -338,11 +347,24 @@ class GamepediaPage extends ExtensionPage {
           this.activeTab === 'genres' && m('.GamepediaTabContent', [
             m('.GameLibrary-header', [
               m('h3', 'Genres (' + this.genres.length + ')'),
-              m('p.helpText', { style: 'margin: 0' }, 'Rename or delete genres. Changes apply to all linked games.'),
+            ]),
+
+            m('.GenreCreate', [
+              m('input.FormControl', {
+                type:        'text',
+                placeholder: 'New genre name...',
+                value:       this.newGenreName || '',
+                oninput:     (e) => { this.newGenreName = e.target.value; },
+                onkeydown:   (e) => { if (e.key === 'Enter') this.createGenre(); },
+              }),
+              m('button.Button.Button--primary', {
+                disabled: !this.newGenreName || this.creatingGenre,
+                onclick:  () => this.createGenre(),
+              }, this.creatingGenre ? [m('i.fas.fa-spinner.fa-spin'), ' Adding...'] : [m('i.fas.fa-plus'), ' Add Genre']),
             ]),
 
             this.genresLoading && m('p', [m('i.fas.fa-spinner.fa-spin'), ' Loading...']),
-            !this.genresLoading && this.genres.length === 0 && m('p.helpText', 'No genres yet. Import some games first.'),
+            !this.genresLoading && this.genres.length === 0 && m('p.helpText', 'No genres yet. Add one above.'),
             !this.genresLoading && this.genres.length > 0 && m('.GenreList',
               this.genres.map((genre) => this.viewGenre(genre))
             ),
@@ -431,6 +453,30 @@ class GamepediaPage extends ExtensionPage {
         });
         window.m.redraw();
       });
+  }
+
+  createGenre() {
+    const m = window.m;
+    const name = (this.newGenreName || '').trim();
+    if (!name) return;
+    this.creatingGenre = true; m.redraw();
+
+    app.request({
+      method: 'POST',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/admin/genres',
+      body:   { name },
+    }).then((r) => {
+      this.creatingGenre = false;
+      if (r.error) { app.alerts.show({ type: 'error' }, r.error); m.redraw(); return; }
+      this.genres.push(r.data);
+      this.genres.sort((a, b) => a.name.localeCompare(b.name));
+      this.newGenreName = '';
+      m.redraw();
+    }).catch((e) => {
+      this.creatingGenre = false;
+      app.alerts.show({ type: 'error' }, e.response?.json?.error || 'Failed to create genre.');
+      m.redraw();
+    });
   }
 
   refreshGame(game) {

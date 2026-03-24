@@ -10,7 +10,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Resofire\Gamepedia\Models\Game;
-use Resofire\Gamepedia\Models\Genre;
 use Resofire\Gamepedia\Models\Screenshot;
 use Resofire\Gamepedia\Services\IgdbService;
 
@@ -68,22 +67,7 @@ class ImportGameController implements RequestHandlerInterface
             'raw_igdb_data'      => $data['raw_igdb_data'],
         ]);
 
-        // Save genres — create if they don't exist yet
-        $genreIds = [];
-        foreach ($data['genres'] as $genreData) {
-            $genre = Genre::firstOrCreate(
-                ['igdb_id' => $genreData['igdb_id']],
-                [
-                    'name' => $genreData['name'],
-                    'slug' => Str::slug($genreData['name']),
-                ]
-            );
-            $genreIds[] = $genre->id;
-        }
-
-        if (!empty($genreIds)) {
-            $game->genres()->sync($genreIds);
-        }
+        // Genres are set manually — not imported from IGDB
 
         // Save screenshots
         foreach ($data['screenshots'] as $screenshotData) {
@@ -97,9 +81,12 @@ class ImportGameController implements RequestHandlerInterface
 
         return new JsonResponse([
             'data' => [
-                'id'   => $game->id,
-                'name' => $game->name,
-                'slug' => $game->slug,
+                'id'              => $game->id,
+                'name'            => $game->name,
+                'slug'            => $game->slug,
+                'cover_image_url' => $game->cover_image_url,
+                'release_year'    => $game->release_year,
+                'developer'       => $game->developer,
             ],
             'error' => null,
         ]);

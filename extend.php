@@ -22,6 +22,7 @@ use Resofire\Gamepedia\Api\Controllers\Admin\ListGamesController;
 use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\RefreshGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\ListGenresController;
+use Resofire\Gamepedia\Api\Controllers\Admin\CreateGenreController;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGenreController;
 use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGenreController;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGameGenresController;
@@ -58,8 +59,9 @@ return [
         ->post('/gamepedia/admin/games/{id}/refresh', 'gamepedia.admin.games.refresh', RefreshGameController::class)
         ->post('/gamepedia/admin/games/{id}/genres',  'gamepedia.admin.games.genres',  UpdateGameGenresController::class)
         // Admin — genres
-        ->get('/gamepedia/admin/genres',       'gamepedia.admin.genres.index',    ListGenresController::class)
-        ->post('/gamepedia/admin/genres/{id}', 'gamepedia.admin.genres.update',   UpdateGenreController::class)
+        ->get('/gamepedia/admin/genres',        'gamepedia.admin.genres.index',   ListGenresController::class)
+        ->post('/gamepedia/admin/genres',        'gamepedia.admin.genres.create',  CreateGenreController::class)
+        ->post('/gamepedia/admin/genres/{id}',   'gamepedia.admin.genres.update',  UpdateGenreController::class)
         ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class),
 
     // Expose permissions + settings to JS frontend

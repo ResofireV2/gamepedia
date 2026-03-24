@@ -22,8 +22,11 @@ class SaveGameLinks
         $ids = $event->data['attributes']['gamepediaGameIds'] ?? null;
         if (!is_array($ids) || empty($ids)) return;
 
-        // Only on creation
+        // Only on creation, not edits
         if ($event->discussion->exists) return;
+
+        // Check permission
+        if (!$event->actor->hasPermission('gamepedia.linkGame')) return;
 
         self::$pendingDiscussionGames[spl_object_id($event->discussion)] = array_map('intval', $ids);
     }
@@ -35,6 +38,9 @@ class SaveGameLinks
 
         $post = $event->post;
         if ($post->exists || $post->type !== 'comment') return;
+
+        // Check permission
+        if (!$event->actor->hasPermission('gamepedia.linkGame')) return;
 
         self::$pendingPostGames[spl_object_id($post)] = array_map('intval', $ids);
     }

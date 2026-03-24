@@ -449,7 +449,7 @@ function getLinkedGames(composer) {
 
 function openGamePicker(composer) {
   const linked = getLinkedGames(composer);
-  const max    = parseInt(app.forum.attribute('gamepedia.max_games_per_discussion') || 3);
+  const max    = app.forum.attribute('gamepedia.maxGamesPerDiscussion') || 3;
 
   if (linked.length >= max) {
     app.alerts.show({ type: 'error' }, 'You can only link up to ' + max + ' game(s) per discussion.');
@@ -497,8 +497,10 @@ app.initializers.add('resofire-gamepedia', function () {
   app.routes['gamepedia']      = { path: '/gamepedia',       component: GamepediaPage };
   app.routes['gamepedia.game'] = { path: '/gamepedia/:slug', component: GameDetailPage };
 
-  // Sidenav link
+  // Sidenav link — only show if actor can view Gamepedia
   extend(IndexPage.prototype, 'navItems', function (items) {
+    if (!app.forum.attribute('gamepedia.canView') && !app.session.user?.isAdmin()) return;
+
     items.add('gamepedia', m(LinkButton, {
       href: app.route('gamepedia'),
       icon: 'fas fa-gamepad',
@@ -546,10 +548,11 @@ app.initializers.add('resofire-gamepedia', function () {
     ), 5);
   });
 
-  // Add gamepad button to the TextEditor toolbar
+  // Add gamepad button to the TextEditor toolbar — only if user can link games
   extend(TextEditor.prototype, 'toolbarItems', function (items) {
     const composer = this.attrs.composer;
     if (!composer) return;
+    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
 
     items.add('gamepedia', m('button.Button.Button--icon.Button--link', {
       title:   'Link a game',
@@ -559,12 +562,14 @@ app.initializers.add('resofire-gamepedia', function () {
 
   // Inject game chips into DiscussionComposer footer
   extend(DiscussionComposer.prototype, 'headerItems', function (items) {
+    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
     if (chips) items.add('gamepediaChips', chips, -100);
   });
 
   // Inject game chips into ReplyComposer footer
   extend(ReplyComposer.prototype, 'headerItems', function (items) {
+    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
     if (chips) items.add('gamepediaChips', chips, -100);
   });

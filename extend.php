@@ -5,6 +5,8 @@ use Flarum\Discussion\Event\Saving as DiscussionSaving;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
 use Flarum\Post\Event\Saving as PostSaving;
 use Flarum\Post\Event\Posted;
+use Flarum\Api\Serializer\ForumSerializer;
+use Resofire\Gamepedia\Api\Serializers\ForumGamepediaAttributes;
 use Flarum\Api\Serializer\DiscussionSerializer;
 use Resofire\Gamepedia\Api\Serializers\DiscussionGameSerializer;
 use Flarum\Discussion\Discussion;
@@ -47,6 +49,10 @@ return [
         ->post('/gamepedia/admin/import', 'gamepedia.admin.import', ImportGameController::class)
         ->delete('/gamepedia/admin/games/{id}', 'gamepedia.admin.games.delete', DeleteGameController::class)
         ->post('/gamepedia/admin/games/{id}/refresh', 'gamepedia.admin.games.refresh', RefreshGameController::class),
+
+    // Expose gamepedia permissions and settings to the JS frontend
+    (new Extend\ApiSerializer(ForumSerializer::class))
+        ->attributes(ForumGamepediaAttributes::class),
 
     // Inject gamepediaGames into every discussion API response
     (new Extend\ApiSerializer(DiscussionSerializer::class))

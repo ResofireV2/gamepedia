@@ -533,6 +533,81 @@ function viewGameChips(composer) {
   );
 }
 
+// ─── Game Card Slideshow ──────────────────────────────────────────────────────
+
+class GameCardSlideshow {
+  oninit(vnode) {
+    this.games    = vnode.attrs.games;
+    this.current  = 0;
+    this.progress = 0;  // 0–100
+    this.interval = null;
+    this.rafId    = null;
+    this.startTime = null;
+  }
+
+  oncreate() {
+    if (this.games.length > 1) this.startCycle();
+  }
+
+  onremove() {
+    this.stopCycle();
+  }
+
+  getDuration() {
+    return (parseInt(app.forum.attribute('gamepedia.slideshow_interval')) || 4) * 1000;
+  }
+
+  startCycle() {
+    this.startTime = performance.now();
+    const duration = this.getDuration();
+
+    const tick = (now) => {
+      const elapsed = now - this.startTime;
+      this.progress = Math.min((elapsed / duration) * 100, 100);
+
+      if (elapsed >= duration) {
+        this.current   = (this.current + 1) % this.games.length;
+        this.progress  = 0;
+        this.startTime = performance.now();
+      }
+
+      window.m.redraw();
+      this.rafId = requestAnimationFrame(tick);
+    };
+
+    this.rafId = requestAnimationFrame(tick);
+  }
+
+  stopCycle() {
+    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+  }
+
+  view() {
+    const m    = window.m;
+    const game = this.games[this.current];
+
+    return m('a.DiscussionGameCard', {
+      href:     app.route('gamepedia.game', { slug: game.slug }),
+      oncreate: m.route.link,
+    }, [
+      m('.DiscussionGameCard-cover', [
+        game.cover_image_url
+          ? m('img', { src: game.cover_image_url, alt: game.name })
+          : m('.DiscussionGameCard-noCover', m('i.fas.fa-gamepad')),
+      ]),
+      m('.DiscussionGameCard-info', [
+        m('.DiscussionGameCard-name', game.name),
+        game.release_year ? m('.DiscussionGameCard-year', game.release_year) : null,
+      ]),
+      this.games.length > 1 && m('.DiscussionGameCard-progress', [
+        m('.DiscussionGameCard-progress-bar', {
+          style: { width: this.progress + '%' },
+        }),
+      ]),
+    ]);
+  }
+}
+
 // ─── Initializer ─────────────────────────────────────────────────────────────
 
 app.initializers.add('resofire-gamepedia', function () {

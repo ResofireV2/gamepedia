@@ -462,6 +462,17 @@ class GamepediaPage extends ExtensionPage {
                 }),
               ]),
               m('.Form-group', [
+                m('label', 'Game Card Slideshow Interval'),
+                m('p.helpText', 'Seconds between game card slides on discussion pages. Default: 4.'),
+                m('input.FormControl', {
+                  type:    'number',
+                  min:     1, max: 30,
+                  style:   'width: 80px',
+                  value:   app.data.settings['gamepedia.slideshow_interval'] || 4,
+                  oninput: (e) => { app.data.settings['gamepedia.slideshow_interval'] = e.target.value; },
+                }),
+              ]),
+              m('.Form-group', [
                 m('button.Button.Button--primary', {
                   type:    'button',
                   onclick: () => this.saveSettings(),
@@ -636,6 +647,7 @@ class GamepediaPage extends ExtensionPage {
         'gamepedia.igdb_client_id':           app.data.settings['gamepedia.igdb_client_id']           || '',
         'gamepedia.igdb_client_secret':       app.data.settings['gamepedia.igdb_client_secret']       || '',
         'gamepedia.max_games_per_discussion': app.data.settings['gamepedia.max_games_per_discussion'] || 3,
+        'gamepedia.slideshow_interval':       app.data.settings['gamepedia.slideshow_interval']       || 4,
       },
     }).then(() => { app.alerts.show({ type: 'success' }, 'Settings saved.'); m.redraw(); })
       .catch(() => { app.alerts.show({ type: 'error' }, 'Failed to save settings.'); m.redraw(); });

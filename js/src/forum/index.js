@@ -9,6 +9,8 @@ import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import ReplyComposer from 'flarum/forum/components/ReplyComposer';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
 import DiscussionHero from 'flarum/forum/components/DiscussionHero';
+import SelectDropdown from 'flarum/common/components/SelectDropdown';
+import listItems from 'flarum/common/helpers/listItems';
 
 // ─── Simple Lightbox ──────────────────────────────────────────────────────────
 
@@ -152,9 +154,12 @@ class GamePickerModal extends Modal {
 }
 
 // ─── Gamepedia Browse Page ────────────────────────────────────────────────────
+// Extends IndexPage so we inherit the full sidenav (including items added by
+// other extensions like Tags) and only override the content area.
 
-class GamepediaPage extends Page {
+class GamepediaPage extends IndexPage {
   oninit(vnode) {
+    // Call Page's oninit directly — we don't want IndexPage's discussion loading
     super.oninit(vnode);
     this.games       = [];
     this.loading     = true;
@@ -167,43 +172,13 @@ class GamepediaPage extends Page {
     this.search      = window.m.route.param('search') || '';
     this.genre       = window.m.route.param('genre')  || '';
     this.year        = window.m.route.param('year')   || '';
-    this.bodyClass   = 'App--gamepedia';
+    this.bodyClass   = 'App--gamepedia App--index';
     this.loadGames();
-  }
-
-  loadGames(page) {
-    const m = window.m;
-    this.loading     = true;
-    this.currentPage = page || parseInt(m.route.param('page')) || 1;
-    m.redraw();
-
-    const params = { page: this.currentPage };
-    if (this.search) params.search = this.search;
-    if (this.genre)  params.genre  = this.genre;
-    if (this.year)   params.year   = this.year;
-
-    app.request({
-      method: 'GET',
-      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
-      params,
-    }).then((response) => {
-      this.loading    = false;
-      this.games      = response.data           || [];
-      this.totalPages = response.meta.last_page || 1;
-      this.total      = response.meta.total     || 0;
-      this.genres     = response.filters.genres || [];
-      this.years      = response.filters.years  || [];
-      m.redraw();
-    }).catch(() => {
-      this.loading = false;
-      this.error   = 'Failed to load games.';
-      m.redraw();
-    });
   }
 
   view() {
     const m = window.m;
-    return m('.GamepediaPage', [
+    return m('.IndexPage.GamepediaPage', [
       m('.hero.GamepediaHero', [
         m('.container', [
           m('h2.GamepediaHero-title', [m('i.fas.fa-gamepad'), ' Gamepedia']),
@@ -211,50 +186,64 @@ class GamepediaPage extends Page {
         ]),
       ]),
       m('.container', [
-        m('.GamepediaFilters', [
-          m('input.FormControl.GamepediaFilters-search', {
-            type:        'text',
-            placeholder: 'Search games...',
-            value:       this.search,
-            oninput:     (e) => {
-              this.search = e.target.value;
-              clearTimeout(this.searchTimer);
-              this.searchTimer = setTimeout(() => this.loadGames(1), 400);
-            },
-          }),
-          m('select.FormControl.GamepediaFilters-genre', {
-            value:    this.genre,
-            onchange: (e) => { this.genre = e.target.value; this.loadGames(1); },
-          }, [
-            m('option', { value: '' }, 'All Genres'),
-            ...this.genres.map((g) => m('option', { value: g.slug, selected: this.genre === g.slug }, g.name)),
+        m('.sideNavContainer', [
+          m('nav.IndexPage-nav.sideNav', [
+            m('ul', listItems(this.sidebarItems().toArray())),
           ]),
-          m('select.FormControl.GamepediaFilters-year', {
-            value:    this.year,
-            onchange: (e) => { this.year = e.target.value; this.loadGames(1); },
-          }, [
-            m('option', { value: '' }, 'All Years'),
-            ...this.years.map((y) => m('option', { value: y, selected: this.year == y }, y)),
+          m('.sideNavOffset', [
+            this.viewContent(),
           ]),
         ]),
+      ]),
+    ]);
+  }
 
-        this.loading && m('.GamepediaGrid-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading games...']),
-        this.error   && m('.Alert.Alert--error', this.error),
-
-        !this.loading && this.games.length === 0 && m('.GamepediaGrid-empty', 'No games found.'),
-        !this.loading && this.games.length > 0   && m('.GamepediaGrid',
-          this.games.map((game) => this.viewCard(game))
-        ),
-
-        !this.loading && this.totalPages > 1 && m('.GamepediaPagination', [
-          this.currentPage > 1 && m('button.Button', {
-            onclick: () => this.loadGames(this.currentPage - 1),
-          }, [m('i.fas.fa-chevron-left'), ' Previous']),
-          m('span.GamepediaPagination-info', 'Page ' + this.currentPage + ' of ' + this.totalPages),
-          this.currentPage < this.totalPages && m('button.Button', {
-            onclick: () => this.loadGames(this.currentPage + 1),
-          }, ['Next ', m('i.fas.fa-chevron-right')]),
+  viewContent() {
+    const m = window.m;
+    return m('div', [
+      m('.GamepediaFilters', [
+        m('input.FormControl.GamepediaFilters-search', {
+          type:        'text',
+          placeholder: 'Search games...',
+          value:       this.search,
+          oninput:     (e) => {
+            this.search = e.target.value;
+            clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(() => this.loadGames(1), 400);
+          },
+        }),
+        m('select.FormControl.GamepediaFilters-genre', {
+          value:    this.genre,
+          onchange: (e) => { this.genre = e.target.value; this.loadGames(1); },
+        }, [
+          m('option', { value: '' }, 'All Genres'),
+          ...this.genres.map((g) => m('option', { value: g.slug, selected: this.genre === g.slug }, g.name)),
         ]),
+        m('select.FormControl.GamepediaFilters-year', {
+          value:    this.year,
+          onchange: (e) => { this.year = e.target.value; this.loadGames(1); },
+        }, [
+          m('option', { value: '' }, 'All Years'),
+          ...this.years.map((y) => m('option', { value: y, selected: this.year == y }, y)),
+        ]),
+      ]),
+
+      this.loading && m('.GamepediaGrid-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading games...']),
+      this.error   && m('.Alert.Alert--error', this.error),
+
+      !this.loading && this.games.length === 0 && m('.GamepediaGrid-empty', 'No games found.'),
+      !this.loading && this.games.length > 0   && m('.GamepediaGrid',
+        this.games.map((game) => this.viewCard(game))
+      ),
+
+      !this.loading && this.totalPages > 1 && m('.GamepediaPagination', [
+        this.currentPage > 1 && m('button.Button', {
+          onclick: () => this.loadGames(this.currentPage - 1),
+        }, [m('i.fas.fa-chevron-left'), ' Previous']),
+        m('span.GamepediaPagination-info', 'Page ' + this.currentPage + ' of ' + this.totalPages),
+        this.currentPage < this.totalPages && m('button.Button', {
+          onclick: () => this.loadGames(this.currentPage + 1),
+        }, ['Next ', m('i.fas.fa-chevron-right')]),
       ]),
     ]);
   }
@@ -281,13 +270,13 @@ class GamepediaPage extends Page {
 
 // ─── Game Detail Page ─────────────────────────────────────────────────────────
 
-class GameDetailPage extends Page {
+class GameDetailPage extends IndexPage {
   oninit(vnode) {
     super.oninit(vnode);
     this.game      = null;
     this.loading   = true;
     this.error     = null;
-    this.bodyClass = 'App--gamepedia';
+    this.bodyClass = 'App--gamepedia App--index';
     this.loadGame(window.m.route.param('slug'));
   }
 
@@ -311,17 +300,27 @@ class GameDetailPage extends Page {
     const m = window.m;
 
     if (this.loading) {
-      return m('.GameDetailPage', [
-        m('.container', m('.GameDetail-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading...'])),
+      return m('.IndexPage.GameDetailPage', [
+        m('.container', [
+          m('.sideNavContainer', [
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+            m('.sideNavOffset', m('.GameDetail-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading...'])),
+          ]),
+        ]),
       ]);
     }
 
     if (this.error || !this.game) {
-      return m('.GameDetailPage', [
+      return m('.IndexPage.GameDetailPage', [
         m('.container', [
-          m('.Alert.Alert--error', this.error || 'Game not found.'),
-          m('a.Button', { href: app.route('gamepedia'), oncreate: m.route.link }, [
-            m('i.fas.fa-arrow-left'), ' Back to Gamepedia',
+          m('.sideNavContainer', [
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+            m('.sideNavOffset', [
+              m('.Alert.Alert--error', this.error || 'Game not found.'),
+              m('a.Button', { href: app.route('gamepedia'), oncreate: m.route.link }, [
+                m('i.fas.fa-arrow-left'), ' Back to Gamepedia',
+              ]),
+            ]),
           ]),
         ]),
       ]);
@@ -329,7 +328,7 @@ class GameDetailPage extends Page {
 
     const game = this.game;
 
-    return m('.GameDetailPage', [
+    return m('.IndexPage.GameDetailPage', [
 
       m('.GameDetailHero', {
         style: game.cover_image_url
@@ -368,67 +367,72 @@ class GameDetailPage extends Page {
       ]),
 
       m('.container', [
-        m('.GameDetailBody', [
-          m('.GameDetailBody-main', [
-            game.summary ? m('.GameDetailSection', [
-              m('h3.GameDetailSection-title', 'About'),
-              m('p.GameDetailSummary', game.summary),
-            ]) : null,
+        m('.sideNavContainer', [
+          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+          m('.sideNavOffset', [
+            m('.GameDetailBody', [
+              m('.GameDetailBody-main', [
+                game.summary ? m('.GameDetailSection', [
+                  m('h3.GameDetailSection-title', 'About'),
+                  m('p.GameDetailSummary', game.summary),
+                ]) : null,
 
-            game.trailer_youtube_id ? m('.GameDetailSection', [
-              m('h3.GameDetailSection-title', 'Trailer'),
-              m('.GameDetailTrailer', [
-                m('iframe', {
-                  src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                  title:           game.name + ' trailer',
-                  allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-                  referrerpolicy:  'strict-origin-when-cross-origin',
-                  allowfullscreen: true,
-                  frameborder:     '0',
-                }),
-              ]),
-            ]) : null,
+                game.trailer_youtube_id ? m('.GameDetailSection', [
+                  m('h3.GameDetailSection-title', 'Trailer'),
+                  m('.GameDetailTrailer', [
+                    m('iframe', {
+                      src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                      title:           game.name + ' trailer',
+                      allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                      referrerpolicy:  'strict-origin-when-cross-origin',
+                      allowfullscreen: true,
+                      frameborder:     '0',
+                    }),
+                  ]),
+                ]) : null,
 
-            game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
-              m('h3.GameDetailSection-title', 'Screenshots'),
-              m('.GameDetailScreenshots',
-                game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
-                  key:     s.id,
-                  href:    '#',
-                  onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
-                }, [
-                  m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
-                ]))
-              ),
-            ]) : null,
-          ]),
-
-          m('.GameDetailBody-sidebar', [
-            m('.GameDetailInfoCard', [
-              m('h3.GameDetailInfoCard-title', 'Game Info'),
-              game.developer  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])  : null,
-              game.publisher  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])  : null,
-              game.release_date ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Released'),  m('span.GameDetailInfoCard-value', game.release_date)]) : null,
-              game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
-                m('span.GameDetailInfoCard-label', 'Genres'),
-                m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
-              ]) : null,
-            ]),
-
-            m('.GameDetailSection', [
-              m('h3.GameDetailSection-title', 'Related Discussions'),
-              game.related_discussions && game.related_discussions.length > 0
-                ? m('.GameDetailDiscussions',
-                    game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
-                      key:      d.id,
-                      href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
-                      oncreate: m.route.link,
+                game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
+                  m('h3.GameDetailSection-title', 'Screenshots'),
+                  m('.GameDetailScreenshots',
+                    game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
+                      key:     s.id,
+                      href:    '#',
+                      onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
                     }, [
-                      m('.GameDetailDiscussion-title', d.title),
-                      m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
+                      m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
                     ]))
-                  )
-                : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
+                  ),
+                ]) : null,
+              ]),
+
+              m('.GameDetailBody-sidebar', [
+                m('.GameDetailInfoCard', [
+                  m('h3.GameDetailInfoCard-title', 'Game Info'),
+                  game.developer  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])  : null,
+                  game.publisher  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])  : null,
+                  game.release_date ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Released'),  m('span.GameDetailInfoCard-value', game.release_date)]) : null,
+                  game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
+                    m('span.GameDetailInfoCard-label', 'Genres'),
+                    m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
+                  ]) : null,
+                ]),
+
+                m('.GameDetailSection', [
+                  m('h3.GameDetailSection-title', 'Related Discussions'),
+                  game.related_discussions && game.related_discussions.length > 0
+                    ? m('.GameDetailDiscussions',
+                        game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
+                          key:      d.id,
+                          href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
+                          oncreate: m.route.link,
+                        }, [
+                          m('.GameDetailDiscussion-title', d.title),
+                          m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
+                        ]))
+                      )
+                    : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
+                ]),
+              ]),
             ]),
           ]),
         ]),

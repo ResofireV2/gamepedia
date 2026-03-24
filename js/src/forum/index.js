@@ -605,6 +605,80 @@ class GameCardSlideshow {
   }
 }
 
+// ─── Game Banner Slideshow (mobile) ──────────────────────────────────────────
+
+class GameBannerSlideshow {
+  oninit(vnode) {
+    this.games   = vnode.attrs.games;
+    this.current = 0;
+    this.rafId   = null;
+    this.barEl   = null;
+  }
+
+  oncreate() {
+    if (this.games.length > 1) this.startCycle();
+  }
+
+  onremove() {
+    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+  }
+
+  getDuration() {
+    return (parseInt(app.forum.attribute('gamepedia.slideshow_interval')) || 4) * 1000;
+  }
+
+  startCycle() {
+    const duration = this.getDuration();
+    let start = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - start;
+      const pct = Math.min((elapsed / duration) * 100, 100);
+
+      if (this.barEl) this.barEl.style.width = pct + '%';
+
+      if (elapsed >= duration) {
+        this.current = (this.current + 1) % this.games.length;
+        start = performance.now();
+        window.m.redraw();
+      }
+
+      this.rafId = requestAnimationFrame(tick);
+    };
+
+    this.rafId = requestAnimationFrame(tick);
+  }
+
+  view() {
+    const m    = window.m;
+    const game = this.games[this.current];
+
+    return m('a.GameBanner', {
+      href:     app.route('gamepedia.game', { slug: game.slug }),
+      oncreate: m.route.link,
+      style:    game.cover_image_url
+        ? { backgroundImage: 'url(' + game.cover_image_url + ')' }
+        : {},
+    }, [
+      m('.GameBanner-overlay', [
+        game.cover_image_url && m('.GameBanner-thumb', [
+          m('img', { src: game.cover_image_url, alt: game.name }),
+        ]),
+        m('.GameBanner-info', [
+          m('.GameBanner-name', game.name),
+          game.release_year ? m('.GameBanner-year', game.release_year) : null,
+        ]),
+      ]),
+      this.games.length > 1 && m('.GameBanner-progress', [
+        m('.GameBanner-progress-bar', {
+          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
+          onupdate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
+        }),
+      ]),
+    ]);
+  }
+}
+
 // ─── Initializer ─────────────────────────────────────────────────────────────
 
 app.initializers.add('resofire-gamepedia', function () {
@@ -650,7 +724,7 @@ app.initializers.add('resofire-gamepedia', function () {
     items.add('gamepediaGames', window.m(GameCardSlideshow, { games }), 50);
   });
 
-  // Mobile game badges — injected between hero and posts, hidden on desktop via CSS
+  // Mobile game banner — injected between hero and posts, hidden on desktop via CSS
   extend(DiscussionPage.prototype, 'pageContent', function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
@@ -658,21 +732,7 @@ app.initializers.add('resofire-gamepedia', function () {
     const games = discussion.attribute('gamepediaGames');
     if (!games || games.length === 0) return;
 
-    const m = window.m;
-    items.add('gamepediaMobileBadges',
-      m('.DiscussionGameBadges',
-        games.map((game) => m('a.DiscussionGameBadge', {
-          key:      game.id,
-          href:     app.route('gamepedia.game', { slug: game.slug }),
-          oncreate: m.route.link,
-        }, [
-          game.cover_image_url
-            ? m('img.DiscussionGameBadge-cover', { src: game.cover_image_url, alt: game.name })
-            : m('i.fas.fa-gamepad'),
-          m('span.DiscussionGameBadge-name', game.name),
-        ]))
-      ),
-    50); // between hero (100) and main container (10)
+    items.add('gamepediaMobileBanner', window.m(GameBannerSlideshow, { games }), 50);
   });
 
   // Add gamepad button to the TextEditor toolbar — only for new discussions, not replies

@@ -681,62 +681,90 @@
   background: var(--primary-color);
 }
 
-// ── Discussion Mobile Game Badges ─────────────────────────────────────────────
+// ── Discussion Mobile Game Banner Slideshow ───────────────────────────────────
 
-// Hide sidebar card on mobile, show badges instead
+// Hide sidebar card on mobile, show banner instead
 @media (max-width: 767px) {
   .DiscussionGameCard {
     display: none !important;
   }
 }
 
-// Hide mobile badges on desktop, show sidebar card instead
+// Hide mobile banner on desktop, show sidebar card instead
 @media (min-width: 768px) {
-  .DiscussionGameBadges {
+  .GameBanner {
     display: none !important;
   }
 }
 
-.DiscussionGameBadges {
+.GameBanner {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 15px;
-  background: var(--body-bg);
-  border-bottom: 1px solid var(--control-bg);
-}
-
-.DiscussionGameBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--control-bg);
-  border: 1px solid rgba(128,128,128,0.15);
-  border-radius: 6px;
-  padding: 4px 10px 4px 4px;
+  flex-direction: column;
+  width: 100%;
+  height: 90px;
+  background-color: #1a1a2e;
+  background-size: cover;
+  background-position: center;
   text-decoration: none;
   color: inherit;
-  font-size: 0.85em;
+  position: relative;
+  overflow: hidden;
+}
 
-  &:hover {
-    border-color: var(--primary-color);
-    text-decoration: none;
-    color: inherit;
+.GameBanner-overlay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  padding: 0 16px;
+  background: linear-gradient(to right, rgba(10,10,20,0.85) 0%, rgba(10,10,20,0.6) 100%);
+}
+
+.GameBanner-thumb {
+  flex-shrink: 0;
+  width: 46px;
+  height: 62px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 }
 
-.DiscussionGameBadge-cover {
-  width: 24px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 3px;
-  flex-shrink: 0;
+.GameBanner-info {
+  min-width: 0;
 }
 
-.DiscussionGameBadge-name {
-  font-weight: 600;
+.GameBanner-name {
+  font-size: 1em;
+  font-weight: 700;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.GameBanner-year {
+  font-size: 0.8em;
+  color: rgba(255,255,255,0.7);
+  margin-top: 2px;
+}
+
+.GameBanner-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.15);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.GameBanner-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--primary-color);
 }

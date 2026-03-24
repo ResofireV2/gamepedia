@@ -44,7 +44,7 @@
 .GamepediaGrid-empty {
   text-align: center;
   padding: 40px;
-  color: #888;
+  color: var(--muted-color, #888);
   grid-column: 1 / -1;
 }
 
@@ -112,7 +112,7 @@
 
 .GameCard-year {
   font-size: 0.85em;
-  color: #888;
+  color: var(--muted-color, #888);
 }
 
 // ── Game Detail Page ──────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@
 .GameDetail-loading {
   text-align: center;
   padding: 60px;
-  color: #888;
+  color: var(--muted-color, #888);
 }
 
 // Hero section with blurred background
@@ -444,7 +444,7 @@
   color: inherit;
 
   &:hover {
-    background: var(--control-bg-active, #e8e8e8);
+    background: var(--control-bg-active);
     text-decoration: none;
   }
 
@@ -460,7 +460,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--control-bg-active, #ddd);
+    background: var(--control-bg-active);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -501,7 +501,7 @@
   margin: 20px 0 40px;
 
   .GamepediaPagination-info {
-    color: #888;
+    color: var(--muted-color, #888);
     font-size: 0.9em;
   }
 }
@@ -537,7 +537,7 @@
   i.fas.fa-gamepad {
     width: 24px;
     text-align: center;
-    color: #888;
+    color: var(--muted-color, #888);
   }
 
   span {
@@ -572,7 +572,7 @@
 .GamePicker-loading {
   text-align: center;
   padding: 20px;
-  color: #888;
+  color: var(--muted-color, #888);
 }
 
 .GamePicker-results {
@@ -622,7 +622,7 @@
     justify-content: center;
     background: var(--control-bg);
     border-radius: 4px;
-    color: #888;
+    color: var(--muted-color, #888);
     flex-shrink: 0;
   }
 

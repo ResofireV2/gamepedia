@@ -25,10 +25,19 @@ class ListGamesPublicController implements RequestHandlerInterface
         $search = trim($params['search'] ?? '');
         $genre  = trim($params['genre']  ?? '');
         $year   = trim($params['year']   ?? '');
+        $sort   = $params['sort'] ?? 'newest';
         $page   = max(1, (int) ($params['page'] ?? 1));
         $limit  = 16; // games per page
 
-        $query = Game::with('genres')->orderBy('name');
+        $query = Game::with('genres');
+
+        // Sorting
+        match($sort) {
+            'az'      => $query->orderBy('name', 'asc'),
+            'za'      => $query->orderBy('name', 'desc'),
+            'oldest'  => $query->orderBy('created_at', 'asc'),
+            default   => $query->orderBy('created_at', 'desc'), // newest
+        };
 
         // Search by name
         if ($search !== '') {

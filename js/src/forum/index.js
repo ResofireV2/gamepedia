@@ -169,6 +169,7 @@ class GamepediaPage extends Page {
     this.search      = window.m.route.param('search') || '';
     this.genre       = window.m.route.param('genre')  || '';
     this.year        = window.m.route.param('year')   || '';
+    this.sort        = window.m.route.param('sort')   || 'newest';
     this.bodyClass   = 'App--gamepedia';
     this.loadGames();
   }
@@ -221,6 +222,15 @@ class GamepediaPage extends Page {
           m('option', { value: '' }, 'All Years'),
           ...this.years.map((y) => m('option', { value: y, selected: this.year == y }, y)),
         ]),
+        m('select.FormControl.GamepediaFilters-sort', {
+          value:    this.sort,
+          onchange: (e) => { this.sort = e.target.value; this.loadGames(1); },
+        }, [
+          m('option', { value: 'newest' }, 'Newest Added'),
+          m('option', { value: 'oldest' }, 'Oldest Added'),
+          m('option', { value: 'az' },     'A → Z'),
+          m('option', { value: 'za' },     'Z → A'),
+        ]),
       ]),
 
       this.loading && m('.GamepediaGrid-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading games...']),
@@ -253,6 +263,7 @@ class GamepediaPage extends Page {
     if (this.search) params.search = this.search;
     if (this.genre)  params.genre  = this.genre;
     if (this.year)   params.year   = this.year;
+    if (this.sort)   params.sort   = this.sort;
 
     app.request({
       method: 'GET',

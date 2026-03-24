@@ -570,7 +570,6 @@ class GameCardSlideshow {
     const dur  = this.getDuration();
 
     return m('a.DiscussionGameCard', {
-      key:      this.tick,
       href:     app.route('gamepedia.game', { slug: game.slug }),
       oncreate: m.route.link,
     }, [
@@ -585,7 +584,18 @@ class GameCardSlideshow {
       ]),
       this.games.length > 1 && m('.DiscussionGameCard-progress', [
         m('.DiscussionGameCard-progress-bar', {
-          style: { animationDuration: dur + 'ms' },
+          style:    { animationDuration: dur + 'ms' },
+          oncreate: (vnode) => {
+            // Force animation restart by triggering a reflow
+            vnode.dom.style.animation = 'none';
+            vnode.dom.offsetHeight; // reflow
+            vnode.dom.style.animation = '';
+          },
+          onupdate: (vnode) => {
+            vnode.dom.style.animation = 'none';
+            vnode.dom.offsetHeight; // reflow
+            vnode.dom.style.animation = '';
+          },
         }),
       ]),
     ]);

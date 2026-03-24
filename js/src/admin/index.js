@@ -63,6 +63,7 @@ class AddGameModal extends Modal {
         isAdded
           ? m('span.GameImport-done', [m('i.fas.fa-check'), ' Added'])
           : m('button.Button.Button--primary', {
+              type:     'button',
               disabled: isAdding,
               onclick:  () => this.addGame(game),
             }, isAdding ? [m('i.fas.fa-spinner.fa-spin'), ' Adding...'] : 'Add Game'),

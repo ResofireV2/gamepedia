@@ -677,6 +677,12 @@
 
 .DiscussionGameCard-progress-bar {
   height: 100%;
+  width: 0%;
   background: var(--primary-color);
-  transition: none;
+  animation: gamepedia-progress linear forwards;
+}
+
+@keyframes gamepedia-progress {
+  from { width: 0%; }
+  to   { width: 100%; }
 }

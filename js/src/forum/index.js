@@ -570,6 +570,7 @@ class GameCardSlideshow {
     const dur  = this.getDuration();
 
     return m('a.DiscussionGameCard', {
+      key:      this.tick,
       href:     app.route('gamepedia.game', { slug: game.slug }),
       oncreate: m.route.link,
     }, [
@@ -582,9 +583,7 @@ class GameCardSlideshow {
         m('.DiscussionGameCard-name', game.name),
         game.release_year ? m('.DiscussionGameCard-year', game.release_year) : null,
       ]),
-      this.games.length > 1 && m('.DiscussionGameCard-progress', {
-        key: this.tick, // new key forces Mithril to recreate the element, restarting the animation
-      }, [
+      this.games.length > 1 && m('.DiscussionGameCard-progress', [
         m('.DiscussionGameCard-progress-bar', {
           style: { animationDuration: dur + 'ms' },
         }),

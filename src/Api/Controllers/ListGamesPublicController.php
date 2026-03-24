@@ -26,7 +26,7 @@ class ListGamesPublicController implements RequestHandlerInterface
         $genre  = trim($params['genre']  ?? '');
         $year   = trim($params['year']   ?? '');
         $page   = max(1, (int) ($params['page'] ?? 1));
-        $limit  = 24; // games per page
+        $limit  = 16; // games per page
 
         $query = Game::with('genres')->orderBy('name');
 

@@ -629,7 +629,7 @@ app.initializers.add('resofire-gamepedia', function () {
       const composer = app.composer;
       if (composer && composer.isVisible()) {
         if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
-        if (!(composer.body.componentClass?.prototype instanceof DiscussionComposer)) return;
+        if (!(composer.body.componentClass === DiscussionComposer)) return;
         openGamePicker(composer);
       }
     }
@@ -654,8 +654,7 @@ app.initializers.add('resofire-gamepedia', function () {
     const composer = this.attrs.composer;
     if (!composer) return;
     if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
-    // Only show on DiscussionComposer, not ReplyComposer or EditPostComposer
-    if (!(composer.body.componentClass?.prototype instanceof DiscussionComposer)) return;
+    if (composer.body.componentClass !== DiscussionComposer) return;
 
     items.add('gamepedia', m('button.Button.Button--icon.Button--link', {
       title:   'Link a game',

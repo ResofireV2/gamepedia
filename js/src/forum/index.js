@@ -154,12 +154,9 @@ class GamePickerModal extends Modal {
 }
 
 // ─── Gamepedia Browse Page ────────────────────────────────────────────────────
-// Extends IndexPage so we inherit the full sidenav (including items added by
-// other extensions like Tags) and only override the content area.
 
-class GamepediaPage extends IndexPage {
+class GamepediaPage extends Page {
   oninit(vnode) {
-    // Call Page's oninit directly — we don't want IndexPage's discussion loading
     super.oninit(vnode);
     this.games       = [];
     this.loading     = true;
@@ -188,11 +185,9 @@ class GamepediaPage extends IndexPage {
       m('.container', [
         m('.sideNavContainer', [
           m('nav.IndexPage-nav.sideNav', [
-            m('ul', listItems(this.sidebarItems().toArray())),
+            m('ul', listItems(IndexPage.prototype.sidebarItems().toArray())),
           ]),
-          m('.sideNavOffset', [
-            this.viewContent(),
-          ]),
+          m('.sideNavOffset', [this.viewContent()]),
         ]),
       ]),
     ]);
@@ -270,7 +265,7 @@ class GamepediaPage extends IndexPage {
 
 // ─── Game Detail Page ─────────────────────────────────────────────────────────
 
-class GameDetailPage extends IndexPage {
+class GameDetailPage extends Page {
   oninit(vnode) {
     super.oninit(vnode);
     this.game      = null;
@@ -303,7 +298,7 @@ class GameDetailPage extends IndexPage {
       return m('.IndexPage.GameDetailPage', [
         m('.container', [
           m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
             m('.sideNavOffset', m('.GameDetail-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading...'])),
           ]),
         ]),
@@ -314,7 +309,7 @@ class GameDetailPage extends IndexPage {
       return m('.IndexPage.GameDetailPage', [
         m('.container', [
           m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
             m('.sideNavOffset', [
               m('.Alert.Alert--error', this.error || 'Game not found.'),
               m('a.Button', { href: app.route('gamepedia'), oncreate: m.route.link }, [
@@ -368,7 +363,7 @@ class GameDetailPage extends IndexPage {
 
       m('.container', [
         m('.sideNavContainer', [
-          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(this.sidebarItems().toArray()))]),
+          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
           m('.sideNavOffset', [
             m('.GameDetailBody', [
               m('.GameDetailBody-main', [

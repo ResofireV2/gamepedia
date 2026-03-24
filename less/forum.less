@@ -434,13 +434,12 @@
 .GameDetailDiscussion {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 16px;
+  padding: 16px 20px;
   background: var(--control-bg);
-  border-radius: 6px;
+  border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  font-size: 0.9em;
 
   &:hover {
     background: var(--control-bg-active, #e8e8e8);
@@ -448,16 +447,16 @@
   }
 
   .GameDetailDiscussion-avatar {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
   }
 
   .GameDetailDiscussion-avatarFallback {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--control-bg-active, #ddd);
     display: flex;
@@ -465,7 +464,7 @@
     justify-content: center;
     flex-shrink: 0;
     color: var(--muted-color);
-    font-size: 0.85em;
+    font-size: 1em;
   }
 
   .GameDetailDiscussion-body {
@@ -474,20 +473,20 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
   }
 
   .GameDetailDiscussion-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 600;
-    font-size: 1.05em;
+    font-weight: 700;
+    font-size: 1.15em;
   }
 
   .GameDetailDiscussion-meta {
     color: var(--muted-color);
-    font-size: 0.85em;
+    font-size: 1em;
     flex-shrink: 0;
   }
 }

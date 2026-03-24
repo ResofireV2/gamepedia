@@ -243,6 +243,36 @@ class GamepediaPage extends Page {
     ]);
   }
 
+  loadGames(page) {
+    const m = window.m;
+    this.loading     = true;
+    this.currentPage = page || parseInt(m.route.param('page')) || 1;
+    m.redraw();
+
+    const params = { page: this.currentPage };
+    if (this.search) params.search = this.search;
+    if (this.genre)  params.genre  = this.genre;
+    if (this.year)   params.year   = this.year;
+
+    app.request({
+      method: 'GET',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
+      params,
+    }).then((response) => {
+      this.loading    = false;
+      this.games      = response.data           || [];
+      this.totalPages = response.meta.last_page || 1;
+      this.total      = response.meta.total     || 0;
+      this.genres     = response.filters.genres || [];
+      this.years      = response.filters.years  || [];
+      m.redraw();
+    }).catch(() => {
+      this.loading = false;
+      this.error   = 'Failed to load games.';
+      m.redraw();
+    });
+  }
+
   viewCard(game) {
     const m = window.m;
     return m('a.GameCard', {

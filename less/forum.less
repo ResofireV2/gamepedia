@@ -680,3 +680,63 @@
   width: 0%;
   background: var(--primary-color);
 }
+
+// ── Discussion Mobile Game Badges ─────────────────────────────────────────────
+
+// Hide sidebar card on mobile, show badges instead
+@media (max-width: 767px) {
+  .DiscussionGameCard {
+    display: none !important;
+  }
+}
+
+// Hide mobile badges on desktop, show sidebar card instead
+@media (min-width: 768px) {
+  .DiscussionGameBadges {
+    display: none !important;
+  }
+}
+
+.DiscussionGameBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 15px;
+  background: var(--body-bg);
+  border-bottom: 1px solid var(--control-bg);
+}
+
+.DiscussionGameBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--control-bg);
+  border: 1px solid rgba(128,128,128,0.15);
+  border-radius: 6px;
+  padding: 4px 10px 4px 4px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.85em;
+
+  &:hover {
+    border-color: var(--primary-color);
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+.DiscussionGameBadge-cover {
+  width: 24px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.DiscussionGameBadge-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}

@@ -639,6 +639,7 @@ app.initializers.add('resofire-gamepedia', function () {
   // extend(DiscussionListItem.prototype, 'infoItems', ...)
 
   // Game cards in discussion sidebar — between controls (Reply/Follow) and scrubber
+  // Desktop only — hidden on mobile via CSS
   extend(DiscussionPage.prototype, 'sidebarItems', function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
@@ -647,6 +648,31 @@ app.initializers.add('resofire-gamepedia', function () {
     if (!games || games.length === 0) return;
 
     items.add('gamepediaGames', window.m(GameCardSlideshow, { games }), 50);
+  });
+
+  // Mobile game badges — injected between hero and posts, hidden on desktop via CSS
+  extend(DiscussionPage.prototype, 'pageContent', function (items) {
+    const discussion = this.discussion;
+    if (!discussion) return;
+
+    const games = discussion.attribute('gamepediaGames');
+    if (!games || games.length === 0) return;
+
+    const m = window.m;
+    items.add('gamepediaMobileBadges',
+      m('.DiscussionGameBadges',
+        games.map((game) => m('a.DiscussionGameBadge', {
+          key:      game.id,
+          href:     app.route('gamepedia.game', { slug: game.slug }),
+          oncreate: m.route.link,
+        }, [
+          game.cover_image_url
+            ? m('img.DiscussionGameBadge-cover', { src: game.cover_image_url, alt: game.name })
+            : m('i.fas.fa-gamepad'),
+          m('span.DiscussionGameBadge-name', game.name),
+        ]))
+      ),
+    50); // between hero (100) and main container (10)
   });
 
   // Add gamepad button to the TextEditor toolbar — only for new discussions, not replies

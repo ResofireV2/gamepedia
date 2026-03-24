@@ -29,13 +29,14 @@ class ShowGameController implements RequestHandlerInterface
         }
 
         // Load last 10 linked discussions ordered by most recent activity.
-        // We only return fields safe to expose publicly.
         $discussions = $game->discussions()
+            ->with('user')
             ->whereNull('hidden_at')
             ->orderBy('last_posted_at', 'desc')
             ->take(10)
             ->get()
             ->map(function ($discussion) {
+                $user = $discussion->user;
                 return [
                     'id'             => $discussion->id,
                     'title'          => $discussion->title,
@@ -44,6 +45,8 @@ class ShowGameController implements RequestHandlerInterface
                         ? $discussion->last_posted_at->toISOString()
                         : null,
                     'slug'           => $discussion->slug,
+                    'user_username'  => $user ? $user->username : null,
+                    'user_avatar'    => $user && $user->avatar_url ? $user->avatar_url : null,
                 ];
             });
 

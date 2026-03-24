@@ -409,68 +409,77 @@ class GameDetailPage extends Page {
           m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
           m('.sideNavOffset', [
             m('.GameDetailBody', [
-              m('.GameDetailBody-main', [
-                game.summary ? m('.GameDetailSection', [
+
+              // 1. Trailer — full width
+              game.trailer_youtube_id ? m('.GameDetailSection', [
+                m('h3.GameDetailSection-title', 'Trailer'),
+                m('.GameDetailTrailer', [
+                  m('iframe', {
+                    src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
+                    title:           game.name + ' trailer',
+                    allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                    referrerpolicy:  'strict-origin-when-cross-origin',
+                    allowfullscreen: true,
+                    frameborder:     '0',
+                  }),
+                ]),
+              ]) : null,
+
+              // 2. About + Game Info — side by side
+              m('.GameDetailMid', [
+                game.summary ? m('.GameDetailSection.GameDetailMid-about', [
                   m('h3.GameDetailSection-title', 'About'),
                   m('p.GameDetailSummary', game.summary),
                 ]) : null,
 
-                game.trailer_youtube_id ? m('.GameDetailSection', [
-                  m('h3.GameDetailSection-title', 'Trailer'),
-                  m('.GameDetailTrailer', [
-                    m('iframe', {
-                      src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                      title:           game.name + ' trailer',
-                      allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-                      referrerpolicy:  'strict-origin-when-cross-origin',
-                      allowfullscreen: true,
-                      frameborder:     '0',
-                    }),
-                  ]),
-                ]) : null,
-
-                game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
-                  m('h3.GameDetailSection-title', 'Screenshots'),
-                  m('.GameDetailScreenshots',
-                    game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
-                      key:     s.id,
-                      href:    '#',
-                      onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
-                    }, [
-                      m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
-                    ]))
-                  ),
-                ]) : null,
-              ]),
-
-              m('.GameDetailBody-sidebar', [
                 m('.GameDetailInfoCard', [
                   m('h3.GameDetailInfoCard-title', 'Game Info'),
-                  game.developer  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])  : null,
-                  game.publisher  ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])  : null,
+                  game.developer    ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])    : null,
+                  game.publisher    ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])    : null,
                   game.release_date ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Released'),  m('span.GameDetailInfoCard-value', game.release_date)]) : null,
                   game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
                     m('span.GameDetailInfoCard-label', 'Genres'),
                     m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
                   ]) : null,
                 ]),
+              ]),
 
-                m('.GameDetailSection', [
-                  m('h3.GameDetailSection-title', 'Related Discussions'),
-                  game.related_discussions && game.related_discussions.length > 0
-                    ? m('.GameDetailDiscussions',
-                        game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
-                          key:      d.id,
-                          href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
-                          oncreate: m.route.link,
-                        }, [
+              // 3. Related Discussions — full width
+              m('.GameDetailSection', [
+                m('h3.GameDetailSection-title', 'Related Discussions'),
+                game.related_discussions && game.related_discussions.length > 0
+                  ? m('.GameDetailDiscussions',
+                      game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
+                        key:      d.id,
+                        href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
+                        oncreate: m.route.link,
+                      }, [
+                        d.user_avatar
+                          ? m('img.GameDetailDiscussion-avatar', { src: d.user_avatar, alt: d.user_username || '' })
+                          : m('.GameDetailDiscussion-avatarFallback', m('i.fas.fa-user')),
+                        m('.GameDetailDiscussion-body', [
                           m('.GameDetailDiscussion-title', d.title),
                           m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
-                        ]))
-                      )
-                    : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
-                ]),
+                        ]),
+                      ]))
+                    )
+                  : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
               ]),
+
+              // 4. Screenshots — full width
+              game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
+                m('h3.GameDetailSection-title', 'Screenshots'),
+                m('.GameDetailScreenshots',
+                  game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
+                    key:     s.id,
+                    href:    '#',
+                    onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
+                  }, [
+                    m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
+                  ]))
+                ),
+              ]) : null,
+
             ]),
           ]),
         ]),

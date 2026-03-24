@@ -180,7 +180,9 @@ class GamepediaPage extends Page {
       m('header.Hero.GamepediaHero', [
         m('.container', [
           m('h1.Hero-title', [m('i.fas.fa-gamepad'), ' Gamepedia']),
-          m('p.Hero-subtitle', 'Browse the game library'),
+          app.forum.attribute('gamepedia.subtitle')
+            ? m('p.Hero-subtitle', app.forum.attribute('gamepedia.subtitle'))
+            : null,
         ]),
       ]),
       m('.container', [

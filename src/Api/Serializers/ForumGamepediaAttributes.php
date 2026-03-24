@@ -22,6 +22,7 @@ class ForumGamepediaAttributes
             'gamepedia.canView'               => $actor->hasPermission('gamepedia.view'),
             'gamepedia.canLinkGame'           => $actor->hasPermission('gamepedia.linkGame'),
             'gamepedia.maxGamesPerDiscussion' => (int) $this->settings->get('gamepedia.max_games_per_discussion', 3),
+            'gamepedia.subtitle'              => $this->settings->get('gamepedia.subtitle', 'Browse the game library'),
         ];
     }
 }

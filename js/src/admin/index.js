@@ -424,6 +424,15 @@ class GamepediaPage extends ExtensionPage {
           this.activeTab === 'settings' && m('.GamepediaTabContent', [
             m('.Form', [
               m('.Form-group', [
+                m('label', 'Gamepedia Subtitle'),
+                m('p.helpText', 'Displayed below "Gamepedia" on the browse page. Leave blank to hide.'),
+                m('input.FormControl', {
+                  type:    'text',
+                  value:   app.data.settings['gamepedia.subtitle'] || '',
+                  oninput: (e) => { app.data.settings['gamepedia.subtitle'] = e.target.value; },
+                }),
+              ]),
+              m('.Form-group', [
                 m('label', 'IGDB Client ID'),
                 m('p.helpText', 'Your Twitch Developer application Client ID.'),
                 m('input.FormControl', {
@@ -623,6 +632,7 @@ class GamepediaPage extends ExtensionPage {
       method: 'POST',
       url:    app.forum.attribute('apiUrl') + '/settings',
       body:   {
+        'gamepedia.subtitle':                 app.data.settings['gamepedia.subtitle']                 || '',
         'gamepedia.igdb_client_id':           app.data.settings['gamepedia.igdb_client_id']           || '',
         'gamepedia.igdb_client_secret':       app.data.settings['gamepedia.igdb_client_secret']       || '',
         'gamepedia.max_games_per_discussion': app.data.settings['gamepedia.max_games_per_discussion'] || 3,

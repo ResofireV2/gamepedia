@@ -507,26 +507,20 @@ app.initializers.add('resofire-gamepedia', function () {
     }, 'Gamepedia'), 80);
   });
 
-  // Game badges on discussion list items
-  extend(DiscussionListItem.prototype, 'infoItems', function (items) {
-    const games = this.attrs.discussion.attribute('gamepediaGames');
-    if (!games || games.length === 0) return;
-
-    items.add('gamepediaGames', m('.GameBadges',
-      games.map((game) => m('a.GameBadge', {
-        key:      game.id,
-        href:     app.route('gamepedia.game', { slug: game.slug }),
-        title:    game.name,
-        oncreate: m.route.link,
-        onclick:  (e) => e.stopPropagation(),
-      }, [
-        game.cover_image_url
-          ? m('img.GameBadge-cover', { src: game.cover_image_url, alt: game.name })
-          : m('i.fas.fa-gamepad'),
-        m('span.GameBadge-name', game.name),
-      ]))
-    ), 50);
+  // Ctrl+Shift+G keyboard shortcut to open game picker from composer
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+      e.preventDefault();
+      const composer = app.composer?.state;
+      if (composer && composer.isVisible()) {
+        if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
+        openGamePicker(composer);
+      }
+    }
   });
+
+  // Game badges on discussion list items — DISABLED (Stage 12 decision: list badges off by default)
+  // extend(DiscussionListItem.prototype, 'infoItems', ...)
 
   // Game badges on discussion hero (discussion page)
   extend(DiscussionHero.prototype, 'items', function (items) {

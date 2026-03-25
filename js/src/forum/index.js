@@ -601,13 +601,10 @@ app.initializers.add("resofire-gamepedia", function () {
   document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === "G") {
       e.preventDefault();
-      const composer = app.composer;
-      if (composer && composer.isVisible()) {
-        if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
-        const DiscussionComposer = flarum.reg.get("core", "forum/components/DiscussionComposer");
-        if (!DiscussionComposer || !(composer.body.componentClass === DiscussionComposer)) return;
-        openGamePicker(composer);
-      }
+      if (!app.composer || !app.composer.isVisible()) return;
+      if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
+      if (!app.composer.bodyMatches("flarum/forum/components/DiscussionComposer")) return;
+      openGamePicker(app.composer);
     }
   });
 
@@ -629,20 +626,18 @@ app.initializers.add("resofire-gamepedia", function () {
     items.add("gamepediaMobileBanner", m(GameBannerSlideshow, { games }), 50);
   });
 
-  // Gamepad toolbar button — string-path for chunk module
-  extendUtil("flarum/forum/components/TextEditor", "toolbarItems", function (items) {
-    const composer = this.attrs.composer;
-    if (!composer) return;
+  // Gamepad toolbar button — TextEditor is in common (not a chunk), get it directly
+  const TextEditor = flarum.reg.get("core", "common/components/TextEditor");
+  extendUtil(TextEditor.prototype, "toolbarItems", function (items) {
     if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
-    const DiscussionComposer = flarum.reg.get("core", "forum/components/DiscussionComposer");
-    if (!DiscussionComposer || composer.body.componentClass !== DiscussionComposer) return;
+    if (!app.composer.bodyMatches("flarum/forum/components/DiscussionComposer")) return;
     items.add("gamepedia", m("button.Button.Button--icon.Button--link", {
       title:   "Link a game",
-      onclick: () => openGamePicker(composer),
+      onclick: () => openGamePicker(app.composer),
     }, m("i.fas.fa-gamepad")), -10);
   });
 
-  // Game chips in composer header — string-path for chunk module
+  // Game chips in composer header — string-path for chunk module DiscussionComposer
   extendUtil("flarum/forum/components/DiscussionComposer", "headerItems", function (items) {
     if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);

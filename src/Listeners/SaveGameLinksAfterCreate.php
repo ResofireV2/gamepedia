@@ -5,9 +5,13 @@ namespace Resofire\Gamepedia\Listeners;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
 use Resofire\Gamepedia\Models\Game;
 
+/**
+ * Flarum 2.x: Invokable listener with handle() method.
+ * Passed as SaveGameLinksAfterCreate::class to Extend\Event->listen().
+ */
 class SaveGameLinksAfterCreate
 {
-    public function onDiscussionStarted(DiscussionStarted $event): void
+    public function handle(DiscussionStarted $event): void
     {
         $discussion = $event->discussion;
         $key  = spl_object_id($discussion);

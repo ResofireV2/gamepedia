@@ -3,13 +3,17 @@
 namespace Resofire\Gamepedia\Listeners;
 
 use Flarum\Discussion\Event\Saving as DiscussionSaving;
-use Resofire\Gamepedia\Models\Game;
 
+/**
+ * Flarum 2.x: Extend\Event->listen() requires a callable|string, not an array.
+ * This class is now invokable — passed as SaveGameLinks::class to listen().
+ * It handles DiscussionSaving and stores pending game IDs for after-create linking.
+ */
 class SaveGameLinks
 {
     public static array $pendingDiscussionGames = [];
 
-    public function onDiscussionSaving(DiscussionSaving $event): void
+    public function handle(DiscussionSaving $event): void
     {
         $ids = $event->data['attributes']['gamepediaGameIds'] ?? null;
         if (!is_array($ids) || empty($ids)) return;

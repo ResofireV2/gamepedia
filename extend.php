@@ -1,6 +1,5 @@
 <?php
 
-use Flarum\Api\Resource;
 use Flarum\Extend;
 use Flarum\Discussion\Event\Saving as DiscussionSaving;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
@@ -9,8 +8,6 @@ use Resofire\Gamepedia\Models\Game;
 use Resofire\Gamepedia\GamepediaServiceProvider;
 use Resofire\Gamepedia\Listeners\SaveGameLinks;
 use Resofire\Gamepedia\Listeners\SaveGameLinksAfterCreate;
-use Resofire\Gamepedia\Api\Serializers\ForumGamepediaAttributes;
-use Resofire\Gamepedia\Api\Serializers\DiscussionGameSerializer;
 use Resofire\Gamepedia\Api\Controllers\ListGamesPublicController;
 use Resofire\Gamepedia\Api\Controllers\ShowGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\IgdbSearchController;
@@ -28,65 +25,38 @@ return [
     (new Extend\ServiceProvider())
         ->register(GamepediaServiceProvider::class),
 
-    // Admin panel
     (new Extend\Frontend('admin'))
         ->js(__DIR__ . '/js/dist/admin.js')
         ->css(__DIR__ . '/less/admin.less'),
 
-    // Forum frontend
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
         ->css(__DIR__ . '/less/forum.less')
         ->route('/gamepedia', 'gamepedia')
         ->route('/gamepedia/{slug}', 'gamepedia.game'),
 
-    // Locale
     new Extend\Locales(__DIR__ . '/locale'),
 
-    // Flarum 2.x: Plain settings serialized to forum JS via Extend\Settings->serializeToForum().
-    // Field names are camelCase — dots are not valid in JSON:API field names.
-    // The JS reads these as app.forum.attribute('gamepediaMaxGamesPerDiscussion') etc.
-    (new Extend\Settings())
-        ->serializeToForum('gamepediaMaxGamesPerDiscussion', 'gamepedia.max_games_per_discussion')
-        ->default('gamepedia.max_games_per_discussion', 3)
-        ->serializeToForum('gamepediaSubtitle', 'gamepedia.subtitle')
-        ->default('gamepedia.subtitle', 'Browse the game library')
-        ->serializeToForum('gamepediaSlideshowInterval', 'gamepedia.slideshow_interval')
-        ->default('gamepedia.slideshow_interval', 4),
-
-    // API routes — all custom RequestHandlerInterface controllers, unchanged from 1.x
     (new Extend\Routes('api'))
-        // Public
         ->get('/gamepedia/games',              'gamepedia.games.index',           ListGamesPublicController::class)
         ->get('/gamepedia/games/{slug}',       'gamepedia.games.show',            ShowGameController::class)
-        // Admin — games
         ->get('/gamepedia/admin/igdb-search',  'gamepedia.admin.igdb-search',     IgdbSearchController::class)
         ->get('/gamepedia/admin/games',        'gamepedia.admin.games.index',     ListGamesController::class)
         ->post('/gamepedia/admin/import',      'gamepedia.admin.import',          ImportGameController::class)
         ->delete('/gamepedia/admin/games/{id}','gamepedia.admin.games.delete',    DeleteGameController::class)
         ->post('/gamepedia/admin/games/{id}/refresh', 'gamepedia.admin.games.refresh', RefreshGameController::class)
         ->post('/gamepedia/admin/games/{id}/genres',  'gamepedia.admin.games.genres',  UpdateGameGenresController::class)
-        // Admin — genres
         ->get('/gamepedia/admin/genres',        'gamepedia.admin.genres.index',   ListGenresController::class)
         ->post('/gamepedia/admin/genres',        'gamepedia.admin.genres.create',  CreateGenreController::class)
         ->post('/gamepedia/admin/genres/{id}',   'gamepedia.admin.genres.update',  UpdateGenreController::class)
         ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class),
 
-    // Actor-aware permission fields — must use ApiResource, not serializeToForum.
-    // Field names are camelCase (no dots). JS reads as app.forum.attribute('gamepediaCanView').
-    (new Extend\ApiResource(Resource\ForumResource::class))
-        ->fields(ForumGamepediaAttributes::class),
-
-    // Inject gamepediaGames array into every discussion API response.
-    (new Extend\ApiResource(Resource\DiscussionResource::class))
-        ->fields(DiscussionGameSerializer::class),
-
-    // Register gamepediaGames relationship on Discussion model — unchanged from 1.x
     (new Extend\Model(Discussion::class))
         ->belongsToMany('gamepediaGames', Game::class, 'gamepedia_discussion_game', 'discussion_id', 'game_id'),
 
-    // Game linking events — unchanged from 1.x
+    // Flarum 2.x: Event::listen() requires callable|string, not an array.
+    // Listeners are invokable classes with a handle() method.
     (new Extend\Event())
-        ->listen(DiscussionSaving::class,  [SaveGameLinks::class, 'onDiscussionSaving'])
-        ->listen(DiscussionStarted::class, [SaveGameLinksAfterCreate::class, 'onDiscussionStarted']),
+        ->listen(DiscussionSaving::class,  SaveGameLinks::class)
+        ->listen(DiscussionStarted::class, SaveGameLinksAfterCreate::class),
 ];

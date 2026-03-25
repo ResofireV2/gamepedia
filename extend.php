@@ -43,6 +43,17 @@ return [
     // Locale
     new Extend\Locales(__DIR__ . '/locale'),
 
+    // Flarum 2.x: Plain settings serialized to forum JS via Extend\Settings->serializeToForum().
+    // Field names are camelCase — dots are not valid in JSON:API field names.
+    // The JS reads these as app.forum.attribute('gamepediaMaxGamesPerDiscussion') etc.
+    (new Extend\Settings())
+        ->serializeToForum('gamepediaMaxGamesPerDiscussion', 'gamepedia.max_games_per_discussion')
+        ->default('gamepedia.max_games_per_discussion', 3)
+        ->serializeToForum('gamepediaSubtitle', 'gamepedia.subtitle')
+        ->default('gamepedia.subtitle', 'Browse the game library')
+        ->serializeToForum('gamepediaSlideshowInterval', 'gamepedia.slideshow_interval')
+        ->default('gamepedia.slideshow_interval', 4),
+
     // API routes — all custom RequestHandlerInterface controllers, unchanged from 1.x
     (new Extend\Routes('api'))
         // Public
@@ -61,13 +72,12 @@ return [
         ->post('/gamepedia/admin/genres/{id}',   'gamepedia.admin.genres.update',  UpdateGenreController::class)
         ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class),
 
-    // Flarum 2.x: Expose permissions + settings to the JS frontend via ApiResource.
-    // Replaces the 1.x Extend\ApiSerializer(ForumSerializer::class)->attributes() pattern.
+    // Actor-aware permission fields — must use ApiResource, not serializeToForum.
+    // Field names are camelCase (no dots). JS reads as app.forum.attribute('gamepediaCanView').
     (new Extend\ApiResource(Resource\ForumResource::class))
         ->fields(ForumGamepediaAttributes::class),
 
-    // Flarum 2.x: Inject gamepediaGames into discussion API responses via ApiResource.
-    // Replaces the 1.x Extend\ApiSerializer(DiscussionSerializer::class)->attributes() pattern.
+    // Inject gamepediaGames array into every discussion API response.
     (new Extend\ApiResource(Resource\DiscussionResource::class))
         ->fields(DiscussionGameSerializer::class),
 

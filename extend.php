@@ -1,10 +1,9 @@
 <?php
 
+use Flarum\Api\Resource;
 use Flarum\Extend;
 use Flarum\Discussion\Event\Saving as DiscussionSaving;
 use Flarum\Discussion\Event\Started as DiscussionStarted;
-use Flarum\Api\Serializer\ForumSerializer;
-use Flarum\Api\Serializer\DiscussionSerializer;
 use Flarum\Discussion\Discussion;
 use Resofire\Gamepedia\Models\Game;
 use Resofire\Gamepedia\GamepediaServiceProvider;
@@ -44,7 +43,7 @@ return [
     // Locale
     new Extend\Locales(__DIR__ . '/locale'),
 
-    // API routes
+    // API routes — all custom RequestHandlerInterface controllers, unchanged from 1.x
     (new Extend\Routes('api'))
         // Public
         ->get('/gamepedia/games',              'gamepedia.games.index',           ListGamesPublicController::class)
@@ -62,19 +61,21 @@ return [
         ->post('/gamepedia/admin/genres/{id}',   'gamepedia.admin.genres.update',  UpdateGenreController::class)
         ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class),
 
-    // Expose permissions + settings to JS frontend
-    (new Extend\ApiSerializer(ForumSerializer::class))
-        ->attributes(ForumGamepediaAttributes::class),
+    // Flarum 2.x: Expose permissions + settings to the JS frontend via ApiResource.
+    // Replaces the 1.x Extend\ApiSerializer(ForumSerializer::class)->attributes() pattern.
+    (new Extend\ApiResource(Resource\ForumResource::class))
+        ->fields(ForumGamepediaAttributes::class),
 
-    // Inject gamepediaGames into discussion API responses
-    (new Extend\ApiSerializer(DiscussionSerializer::class))
-        ->attributes(DiscussionGameSerializer::class),
+    // Flarum 2.x: Inject gamepediaGames into discussion API responses via ApiResource.
+    // Replaces the 1.x Extend\ApiSerializer(DiscussionSerializer::class)->attributes() pattern.
+    (new Extend\ApiResource(Resource\DiscussionResource::class))
+        ->fields(DiscussionGameSerializer::class),
 
-    // Register gamepediaGames relationship on Discussion model
+    // Register gamepediaGames relationship on Discussion model — unchanged from 1.x
     (new Extend\Model(Discussion::class))
         ->belongsToMany('gamepediaGames', Game::class, 'gamepedia_discussion_game', 'discussion_id', 'game_id'),
 
-    // Game linking events
+    // Game linking events — unchanged from 1.x
     (new Extend\Event())
         ->listen(DiscussionSaving::class,  [SaveGameLinks::class, 'onDiscussionSaving'])
         ->listen(DiscussionStarted::class, [SaveGameLinksAfterCreate::class, 'onDiscussionStarted']),

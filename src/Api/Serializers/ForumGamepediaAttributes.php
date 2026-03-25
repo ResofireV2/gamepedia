@@ -2,28 +2,44 @@
 
 namespace Resofire\Gamepedia\Api\Serializers;
 
-use Flarum\Api\Serializer\ForumSerializer;
+use Flarum\Api\Context;
+use Flarum\Api\Schema;
 use Flarum\Settings\SettingsRepositoryInterface;
 
+/**
+ * Flarum 2.x: Invokable fields class for Extend\ApiResource(ForumResource::class)->fields().
+ * Replaces the 1.x Extend\ApiSerializer(ForumSerializer::class)->attributes() pattern.
+ *
+ * Returns an array of Schema fields that are appended to the /api forum endpoint.
+ * Actor-aware fields receive ($model, Context $context) in their ->get() closures.
+ */
 class ForumGamepediaAttributes
 {
-    protected SettingsRepositoryInterface $settings;
+    public function __construct(
+        protected SettingsRepositoryInterface $settings
+    ) {}
 
-    public function __construct(SettingsRepositoryInterface $settings)
+    public function __invoke(): array
     {
-        $this->settings = $settings;
-    }
-
-    public function __invoke(ForumSerializer $serializer): array
-    {
-        $actor = $serializer->getActor();
-
         return [
-            'gamepedia.canView'               => $actor->hasPermission('gamepedia.view'),
-            'gamepedia.canLinkGame'           => $actor->hasPermission('gamepedia.linkGame'),
-            'gamepedia.maxGamesPerDiscussion' => (int) $this->settings->get('gamepedia.max_games_per_discussion', 3),
-            'gamepedia.subtitle'              => $this->settings->get('gamepedia.subtitle', 'Browse the game library'),
-            'gamepedia.slideshow_interval'    => (int) $this->settings->get('gamepedia.slideshow_interval', 4),
+            Schema\Boolean::make('gamepedia.canView')
+                ->get(fn (object $model, Context $context) =>
+                    $context->getActor()->hasPermission('gamepedia.view')
+                ),
+
+            Schema\Boolean::make('gamepedia.canLinkGame')
+                ->get(fn (object $model, Context $context) =>
+                    $context->getActor()->hasPermission('gamepedia.linkGame')
+                ),
+
+            Schema\Integer::make('gamepedia.maxGamesPerDiscussion')
+                ->get(fn () => (int) $this->settings->get('gamepedia.max_games_per_discussion', 3)),
+
+            Schema\Str::make('gamepedia.subtitle')
+                ->get(fn () => (string) $this->settings->get('gamepedia.subtitle', 'Browse the game library')),
+
+            Schema\Integer::make('gamepedia.slideshow_interval')
+                ->get(fn () => (int) $this->settings->get('gamepedia.slideshow_interval', 4)),
         ];
     }
 }

@@ -1,14 +1,11 @@
 "use strict";
 
-// ---------------------------------------------------------------------------
-// Imports — all via flarum.reg.get()
-// ---------------------------------------------------------------------------
-const app           = flarum.reg.get("core", "admin/app");
-const Modal         = flarum.reg.get("core", "common/components/Modal");
-const Button        = flarum.reg.get("core", "common/components/Button");
+const app              = flarum.reg.get("core", "admin/app");
+const Modal            = flarum.reg.get("core", "common/components/Modal");
+const Button           = flarum.reg.get("core", "common/components/Button");
 const LoadingIndicator = flarum.reg.get("core", "common/components/LoadingIndicator");
-const ExtensionPage = flarum.reg.get("core", "admin/components/ExtensionPage");
-const extenders     = flarum.reg.get("core", "common/extenders");
+const ExtensionPage    = flarum.reg.get("core", "admin/components/ExtensionPage");
+const extenders        = flarum.reg.get("core", "common/extenders");
 
 // ---------------------------------------------------------------------------
 // AddGameModal — IGDB search and import
@@ -122,7 +119,7 @@ class AddGameModal extends Modal {
 }
 
 // ---------------------------------------------------------------------------
-// EditGenreModal — rename a genre
+// EditGenreModal
 // ---------------------------------------------------------------------------
 class EditGenreModal extends Modal {
   oninit(vnode) {
@@ -179,7 +176,7 @@ class EditGenreModal extends Modal {
 }
 
 // ---------------------------------------------------------------------------
-// EditGameGenresModal — assign genres to a game
+// EditGameGenresModal
 // ---------------------------------------------------------------------------
 class EditGameGenresModal extends Modal {
   oninit(vnode) {
@@ -253,7 +250,7 @@ class EditGameGenresModal extends Modal {
 }
 
 // ---------------------------------------------------------------------------
-// GamepediaPage — admin extension page with Games / Genres / Settings tabs
+// GamepediaAdminPage — Games / Genres / Settings tabs
 // ---------------------------------------------------------------------------
 class GamepediaAdminPage extends ExtensionPage {
   oninit(vnode) {
@@ -393,11 +390,9 @@ class GamepediaAdminPage extends ExtensionPage {
             this.gamesLoading && this.games.length === 0 && m("p", [m("i.fas.fa-spinner.fa-spin"), " Loading..."]),
             this.gamesError && m(".Alert.Alert--error", this.gamesError),
             !this.gamesLoading && this.games.length === 0 && m("p.helpText", "No games found."),
-
             this.games.length > 0 && m(".AdminGameGrid",
               this.games.map((game) => this.viewGameCard(game))
             ),
-
             this.hasMore && m(".AdminGames-loadMore", [
               m("button.Button", {
                 disabled: this.gamesLoading,
@@ -535,7 +530,6 @@ class GamepediaAdminPage extends ExtensionPage {
 
   viewGenre(genre) {
     const isDeleting = !!this.deleting["genre_" + genre.id];
-
     return m(".GenreList-item", { key: genre.id }, [
       m(".GenreList-info", [
         m("strong", genre.name),
@@ -572,11 +566,7 @@ class GamepediaAdminPage extends ExtensionPage {
     const name = (this.newGenreName || "").trim();
     if (!name) return;
     this.creatingGenre = true; m.redraw();
-    app.request({
-      method: "POST",
-      url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/genres",
-      body:   { name },
-    })
+    app.request({ method: "POST", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/genres", body: { name } })
       .then((r) => {
         this.creatingGenre = false;
         if (r.error) { app.alerts.show({ type: "error" }, r.error); m.redraw(); return; }
@@ -585,63 +575,35 @@ class GamepediaAdminPage extends ExtensionPage {
         this.newGenreName = "";
         m.redraw();
       })
-      .catch((e) => {
-        this.creatingGenre = false;
-        app.alerts.show({ type: "error" }, e.response?.json?.error || "Failed to create genre.");
-        m.redraw();
-      });
+      .catch((e) => { this.creatingGenre = false; app.alerts.show({ type: "error" }, e.response?.json?.error || "Failed to create genre."); m.redraw(); });
   }
 
   refreshGame(game) {
     this.refreshing[game.id] = true; m.redraw();
-    app.request({
-      method: "POST",
-      url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id + "/refresh",
-    })
+    app.request({ method: "POST", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id + "/refresh" })
       .then((r) => {
         this.refreshing[game.id] = false;
-        if (r.data) {
-          const idx = this.games.findIndex((g) => g.id === game.id);
-          if (idx > -1) Object.assign(this.games[idx], r.data);
-        }
+        if (r.data) { const idx = this.games.findIndex((g) => g.id === game.id); if (idx > -1) Object.assign(this.games[idx], r.data); }
         app.alerts.show({ type: "success" }, game.name + " refreshed.");
         m.redraw();
       })
-      .catch(() => {
-        this.refreshing[game.id] = false;
-        app.alerts.show({ type: "error" }, "Failed to refresh " + game.name + ".");
-        m.redraw();
-      });
+      .catch(() => { this.refreshing[game.id] = false; app.alerts.show({ type: "error" }, "Failed to refresh " + game.name + "."); m.redraw(); });
   }
 
   refreshAll() {
     if (!confirm("Refresh all " + this.totalGames + " games from IGDB? This may take a while.")) return;
     this.refreshingAll = true; m.redraw();
-
     const loadAll = (page, acc) => {
-      app.request({
-        method: "GET",
-        url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/games",
-        params: { page, sort: "newest" },
-      })
+      app.request({ method: "GET", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/games", params: { page, sort: "newest" } })
         .then((r) => {
           const all = [...acc, ...(r.data || [])];
           if (r.meta.has_more) { loadAll(page + 1, all); return; }
           const queue = all;
           const next = () => {
-            if (queue.length === 0) {
-              this.refreshingAll = false;
-              app.alerts.show({ type: "success" }, "All games refreshed.");
-              m.redraw();
-              return;
-            }
+            if (queue.length === 0) { this.refreshingAll = false; app.alerts.show({ type: "success" }, "All games refreshed."); m.redraw(); return; }
             const game = queue.shift();
-            app.request({
-              method: "POST",
-              url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id + "/refresh",
-            })
-              .then(() => { m.redraw(); next(); })
-              .catch(() => { m.redraw(); next(); });
+            app.request({ method: "POST", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id + "/refresh" })
+              .then(() => { m.redraw(); next(); }).catch(() => { m.redraw(); next(); });
           };
           next();
         });
@@ -652,40 +614,17 @@ class GamepediaAdminPage extends ExtensionPage {
   deleteGame(game) {
     if (!confirm("Delete \"" + game.name + "\" from your Gamepedia? This cannot be undone.")) return;
     this.deleting[game.id] = true; m.redraw();
-    app.request({
-      method: "DELETE",
-      url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id,
-    })
-      .then(() => {
-        this.deleting[game.id] = false;
-        this.games = this.games.filter((g) => g.id !== game.id);
-        this.totalGames--;
-        m.redraw();
-      })
-      .catch(() => {
-        this.deleting[game.id] = false;
-        app.alerts.show({ type: "error" }, "Failed to delete game.");
-        m.redraw();
-      });
+    app.request({ method: "DELETE", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/games/" + game.id })
+      .then(() => { this.deleting[game.id] = false; this.games = this.games.filter((g) => g.id !== game.id); this.totalGames--; m.redraw(); })
+      .catch(() => { this.deleting[game.id] = false; app.alerts.show({ type: "error" }, "Failed to delete game."); m.redraw(); });
   }
 
   deleteGenre(genre) {
     if (!confirm("Delete the genre \"" + genre.name + "\"? It will be removed from all games.")) return;
     this.deleting["genre_" + genre.id] = true; m.redraw();
-    app.request({
-      method: "DELETE",
-      url:    app.forum.attribute("apiUrl") + "/gamepedia/admin/genres/" + genre.id,
-    })
-      .then(() => {
-        this.deleting["genre_" + genre.id] = false;
-        this.genres = this.genres.filter((g) => g.id !== genre.id);
-        m.redraw();
-      })
-      .catch(() => {
-        this.deleting["genre_" + genre.id] = false;
-        app.alerts.show({ type: "error" }, "Failed to delete genre.");
-        m.redraw();
-      });
+    app.request({ method: "DELETE", url: app.forum.attribute("apiUrl") + "/gamepedia/admin/genres/" + genre.id })
+      .then(() => { this.deleting["genre_" + genre.id] = false; this.genres = this.genres.filter((g) => g.id !== genre.id); m.redraw(); })
+      .catch(() => { this.deleting["genre_" + genre.id] = false; app.alerts.show({ type: "error" }, "Failed to delete genre."); m.redraw(); });
   }
 
   saveSettings() {
@@ -706,27 +645,25 @@ class GamepediaAdminPage extends ExtensionPage {
 }
 
 // ---------------------------------------------------------------------------
-// Initializer
+// Flarum 2.x: page and permissions MUST be registered via the extend export
+// using extenders.Admin(), not via app.extensionData in the initializer.
+// The Admin extender calls app.registry.for(extension.name) in beforeMount,
+// which is what sets the context that registerPage/registerPermission need.
 // ---------------------------------------------------------------------------
-app.initializers.add("resofire-gamepedia", function () {
-  app.extensionData
-    .for("resofire-gamepedia")
-    .registerPage(GamepediaAdminPage)
-    .registerPermission(
-      {
-        permission: "gamepedia.view",
-        label:      "Browse Gamepedia and view game pages",
-        icon:       "fas fa-gamepad",
-        allowGuest: true,
-      },
-      "view"
-    )
-    .registerPermission(
-      {
-        permission: "gamepedia.linkGame",
-        label:      "Link games to discussions",
-        icon:       "fas fa-link",
-      },
-      "start"
-    );
-});
+export const extend = [
+  (new extenders.Admin())
+    .page(GamepediaAdminPage)
+    .permission(() => ({
+      permission: "gamepedia.view",
+      label:      "Browse Gamepedia and view game pages",
+      icon:       "fas fa-gamepad",
+      allowGuest: true,
+    }), "view")
+    .permission(() => ({
+      permission: "gamepedia.linkGame",
+      label:      "Link games to discussions",
+      icon:       "fas fa-link",
+    }), "start"),
+];
+
+app.initializers.add("resofire-gamepedia", () => {});

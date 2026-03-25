@@ -1,7 +1,7 @@
 "use strict";
 
 const app              = flarum.reg.get("core", "forum/app");
-const { extend }       = flarum.reg.get("core", "common/extend");
+const { extend: extendUtil } = flarum.reg.get("core", "common/extend");
 const Modal            = flarum.reg.get("core", "common/components/Modal");
 const Page             = flarum.reg.get("core", "common/components/Page");
 const LinkButton       = flarum.reg.get("core", "common/components/LinkButton");
@@ -572,15 +572,24 @@ class GameBannerSlideshow {
 }
 
 // ---------------------------------------------------------------------------
+// extend export — routes MUST be registered here via extenders.Routes(),
+// not via app.routes[] in the initializer (router is already mounted by then)
+// ---------------------------------------------------------------------------
+const extenders = flarum.reg.get("core", "common/extenders");
+
+export const extend = [
+  new extenders.Routes()
+    .add("gamepedia",      "/gamepedia",       GamepediaPage)
+    .add("gamepedia.game", "/gamepedia/:slug",  GameDetailPage),
+];
+
+// ---------------------------------------------------------------------------
 // Initializer
 // ---------------------------------------------------------------------------
 app.initializers.add("resofire-gamepedia", function () {
 
-  app.routes["gamepedia"]      = { path: "/gamepedia",       component: GamepediaPage };
-  app.routes["gamepedia.game"] = { path: "/gamepedia/:slug", component: GameDetailPage };
-
   // Sidenav link — extend IndexSidebar.navItems (2.x pattern)
-  extend(IndexSidebar.prototype, "navItems", function (items) {
+  extendUtil(IndexSidebar.prototype, "navItems", function (items) {
     if (!app.forum.attribute("gamepediaCanView") && !app.session.user?.isAdmin()) return;
     items.add("gamepedia", m(LinkButton, {
       href: app.route("gamepedia"),
@@ -603,7 +612,7 @@ app.initializers.add("resofire-gamepedia", function () {
   });
 
   // Game cards in discussion sidebar — string-path for chunk module
-  extend("flarum/forum/components/DiscussionPage", "sidebarItems", function (items) {
+  extendUtil("flarum/forum/components/DiscussionPage", "sidebarItems", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
     const games = discussion.attribute("gamepediaGames");
@@ -612,7 +621,7 @@ app.initializers.add("resofire-gamepedia", function () {
   });
 
   // Mobile banner — string-path for chunk module
-  extend("flarum/forum/components/DiscussionPage", "pageContent", function (items) {
+  extendUtil("flarum/forum/components/DiscussionPage", "pageContent", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
     const games = discussion.attribute("gamepediaGames");
@@ -621,7 +630,7 @@ app.initializers.add("resofire-gamepedia", function () {
   });
 
   // Gamepad toolbar button — string-path for chunk module
-  extend("flarum/forum/components/TextEditor", "toolbarItems", function (items) {
+  extendUtil("flarum/forum/components/TextEditor", "toolbarItems", function (items) {
     const composer = this.attrs.composer;
     if (!composer) return;
     if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
@@ -634,14 +643,14 @@ app.initializers.add("resofire-gamepedia", function () {
   });
 
   // Game chips in composer header — string-path for chunk module
-  extend("flarum/forum/components/DiscussionComposer", "headerItems", function (items) {
+  extendUtil("flarum/forum/components/DiscussionComposer", "headerItems", function (items) {
     if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
     if (chips) items.add("gamepediaChips", chips, -100);
   });
 
   // Send linked game IDs with discussion creation — string-path for chunk module
-  extend("flarum/forum/components/DiscussionComposer", "data", function (data) {
+  extendUtil("flarum/forum/components/DiscussionComposer", "data", function (data) {
     const linked = getLinkedGames(this.composer);
     if (linked.length > 0) data.gamepediaGameIds = linked.map((g) => g.id);
   });

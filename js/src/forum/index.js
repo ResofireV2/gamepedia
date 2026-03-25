@@ -1,38 +1,46 @@
-import app from 'flarum/forum/app';
-import { extend } from 'flarum/common/extend';
-import IndexPage from 'flarum/forum/components/IndexPage';
-import LinkButton from 'flarum/common/components/LinkButton';
-import Page from 'flarum/common/components/Page';
-import Modal from 'flarum/common/components/Modal';
-import TextEditor from 'flarum/common/components/TextEditor';
-import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
-import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
-import DiscussionHero from 'flarum/forum/components/DiscussionHero';
-import DiscussionPage from 'flarum/forum/components/DiscussionPage';
-import SelectDropdown from 'flarum/common/components/SelectDropdown';
-import listItems from 'flarum/common/helpers/listItems';
+"use strict";
 
-// ─── Simple Lightbox ──────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Imports — all via flarum.reg.get(), never import statements in dist JS.
+// Chunk modules (DiscussionPage, TextEditor, DiscussionComposer) are NOT
+// imported directly — they are referenced only via string-path extend/override.
+// ---------------------------------------------------------------------------
+const app              = flarum.reg.get("core", "forum/app");
+const { extend }       = flarum.reg.get("core", "common/extend");
+const Modal            = flarum.reg.get("core", "common/components/Modal");
+const Button           = flarum.reg.get("core", "common/components/Button");
+const Page             = flarum.reg.get("core", "common/components/Page");
+const LinkButton       = flarum.reg.get("core", "common/components/LinkButton");
+const LoadingIndicator = flarum.reg.get("core", "common/components/LoadingIndicator");
+const listItems        = flarum.reg.get("core", "common/helpers/listItems");
+const IndexPage        = flarum.reg.get("core", "forum/components/IndexPage");
+// Chunk modules — string-path only:
+// flarum/forum/components/DiscussionPage
+// flarum/forum/components/TextEditor
+// flarum/forum/components/DiscussionComposer
 
+// ---------------------------------------------------------------------------
+// Simple Lightbox — pure DOM, no Mithril needed
+// ---------------------------------------------------------------------------
 function openLightbox(screenshots, startIndex) {
-  const existing = document.getElementById('gp-lightbox');
+  const existing = document.getElementById("gp-lightbox");
   if (existing) existing.remove();
 
   let current = startIndex;
 
   const render = () => {
-    const lb = document.getElementById('gp-lightbox');
+    const lb = document.getElementById("gp-lightbox");
     if (!lb) return;
-    const img     = lb.querySelector('.gp-lb-img');
-    const counter = lb.querySelector('.gp-lb-counter');
-    if (img)     img.src         = screenshots[current].url;
-    if (counter) counter.textContent = (current + 1) + ' / ' + screenshots.length;
-    lb.querySelector('.gp-lb-prev').style.display = current > 0                      ? '' : 'none';
-    lb.querySelector('.gp-lb-next').style.display = current < screenshots.length - 1 ? '' : 'none';
+    const img     = lb.querySelector(".gp-lb-img");
+    const counter = lb.querySelector(".gp-lb-counter");
+    if (img)     img.src           = screenshots[current].url;
+    if (counter) counter.textContent = (current + 1) + " / " + screenshots.length;
+    lb.querySelector(".gp-lb-prev").style.display = current > 0                      ? "" : "none";
+    lb.querySelector(".gp-lb-next").style.display = current < screenshots.length - 1 ? "" : "none";
   };
 
-  const lb = document.createElement('div');
-  lb.id = 'gp-lightbox';
+  const lb = document.createElement("div");
+  lb.id = "gp-lightbox";
   lb.innerHTML = `
     <div class="gp-lb-backdrop"></div>
     <div class="gp-lb-content">
@@ -44,47 +52,46 @@ function openLightbox(screenshots, startIndex) {
     </div>
   `;
 
-  lb.querySelector('.gp-lb-backdrop').onclick = () => lb.remove();
-  lb.querySelector('.gp-lb-close').onclick    = () => lb.remove();
-  lb.querySelector('.gp-lb-prev').onclick     = () => { current--; render(); };
-  lb.querySelector('.gp-lb-next').onclick     = () => { current++; render(); };
+  lb.querySelector(".gp-lb-backdrop").onclick = () => lb.remove();
+  lb.querySelector(".gp-lb-close").onclick    = () => lb.remove();
+  lb.querySelector(".gp-lb-prev").onclick     = () => { current--; render(); };
+  lb.querySelector(".gp-lb-next").onclick     = () => { current++; render(); };
 
-  document.addEventListener('keydown', function onKey(e) {
-    if (!document.getElementById('gp-lightbox')) {
-      document.removeEventListener('keydown', onKey);
+  document.addEventListener("keydown", function onKey(e) {
+    if (!document.getElementById("gp-lightbox")) {
+      document.removeEventListener("keydown", onKey);
       return;
     }
-    if (e.key === 'Escape')                                  lb.remove();
-    if (e.key === 'ArrowLeft'  && current > 0)               { current--; render(); }
-    if (e.key === 'ArrowRight' && current < screenshots.length - 1) { current++; render(); }
+    if (e.key === "Escape")                                           lb.remove();
+    if (e.key === "ArrowLeft"  && current > 0)                        { current--; render(); }
+    if (e.key === "ArrowRight" && current < screenshots.length - 1)   { current++; render(); }
   });
 
   document.body.appendChild(lb);
   render();
 }
 
-// ─── Game Picker Modal ────────────────────────────────────────────────────────
-// Searches locally-imported Gamepedia games (not IGDB) and returns selection.
-
+// ---------------------------------------------------------------------------
+// GamePickerModal — searches local Gamepedia library, returns selection
+// ---------------------------------------------------------------------------
 class GamePickerModal extends Modal {
   oninit(vnode) {
     super.oninit(vnode);
-    this.query       = '';
+    this.query       = "";
     this.results     = [];
     this.loading     = false;
     this.searchTimer = null;
   }
 
-  className() { return 'GamePickerModal Modal--medium'; }
-  title()     { return 'Link a Game'; }
+  className() { return "GamePickerModal Modal--medium"; }
+  title()     { return "Link a Game"; }
 
   content() {
-    const m = window.m;
-    return m('.Modal-body', [
-      m('.Form-group', [
-        m('input.FormControl', {
-          type:        'text',
-          placeholder: 'Search your game library...',
+    return m(".Modal-body", [
+      m(".Form-group", [
+        m("input.FormControl", {
+          type:        "text",
+          placeholder: "Search your game library...",
           value:       this.query,
           oncreate:    (vnode) => vnode.dom.focus(),
           oninput:     (e) => {
@@ -95,23 +102,20 @@ class GamePickerModal extends Modal {
           },
         }),
       ]),
-
-      this.loading && m('.GamePicker-loading', [m('i.fas.fa-spinner.fa-spin'), ' Searching...']),
-
+      this.loading && m(".GamePicker-loading", [m("i.fas.fa-spinner.fa-spin"), " Searching..."]),
       this.results.length > 0
-        ? m('.GamePicker-results', this.results.map((game) => this.viewResult(game)))
+        ? m(".GamePicker-results", this.results.map((game) => this.viewResult(game)))
         : !this.loading && this.query.length >= 1
-          ? m('p.helpText', 'No games found.')
-          : m('p.helpText', 'Start typing to search your game library.'),
+          ? m("p.helpText", "No games found.")
+          : m("p.helpText", "Start typing to search your game library."),
     ]);
   }
 
   viewResult(game) {
-    const m        = window.m;
     const selected = this.attrs.selected || [];
     const isLinked = selected.some((g) => g.id === game.id);
 
-    return m('button.GamePicker-result' + (isLinked ? '.is-linked' : ''), {
+    return m("button.GamePicker-result" + (isLinked ? ".is-linked" : ""), {
       key:     game.id,
       onclick: (e) => {
         e.preventDefault();
@@ -122,24 +126,23 @@ class GamePickerModal extends Modal {
       },
     }, [
       game.cover_image_url
-        ? m('img.GamePicker-cover', { src: game.cover_image_url, alt: game.name })
-        : m('.GamePicker-noCover', m('i.fas.fa-gamepad')),
-      m('.GamePicker-info', [
-        m('.GamePicker-name', game.name),
-        game.release_year ? m('.GamePicker-year', game.release_year) : null,
+        ? m("img.GamePicker-cover", { src: game.cover_image_url, alt: game.name })
+        : m(".GamePicker-noCover", m("i.fas.fa-gamepad")),
+      m(".GamePicker-info", [
+        m(".GamePicker-name", game.name),
+        game.release_year ? m(".GamePicker-year", game.release_year) : null,
       ]),
-      isLinked ? m('.GamePicker-linked', m('i.fas.fa-check')) : null,
+      isLinked ? m(".GamePicker-linked", m("i.fas.fa-check")) : null,
     ]);
   }
 
   search() {
-    const m = window.m;
     this.loading = true;
     m.redraw();
 
     app.request({
-      method: 'GET',
-      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
+      method: "GET",
+      url:    app.forum.attribute("apiUrl") + "/gamepedia/games",
       params: { search: this.query, page: 1 },
     }).then((response) => {
       this.loading = false;
@@ -153,8 +156,9 @@ class GamePickerModal extends Modal {
   }
 }
 
-// ─── Gamepedia Browse Page ────────────────────────────────────────────────────
-
+// ---------------------------------------------------------------------------
+// GamepediaPage — browse page at /gamepedia
+// ---------------------------------------------------------------------------
 class GamepediaPage extends Page {
   oninit(vnode) {
     super.oninit(vnode);
@@ -166,43 +170,41 @@ class GamepediaPage extends Page {
     this.total       = 0;
     this.genres      = [];
     this.years       = [];
-    this.search      = window.m.route.param('search') || '';
-    this.genre       = window.m.route.param('genre')  || '';
-    this.year        = window.m.route.param('year')   || '';
-    this.sort        = window.m.route.param('sort')   || 'newest';
-    this.bodyClass   = 'App--gamepedia';
+    this.search      = m.route.param("search") || "";
+    this.genre       = m.route.param("genre")  || "";
+    this.year        = m.route.param("year")   || "";
+    this.sort        = m.route.param("sort")   || "newest";
+    this.bodyClass   = "App--gamepedia";
     this.loadGames();
   }
 
   view() {
-    const m = window.m;
-    return m('.IndexPage.GamepediaPage', [
-      m('header.Hero.GamepediaHero', [
-        m('.container', [
-          m('h1.Hero-title', [m('i.fas.fa-gamepad'), ' Gamepedia']),
-          app.forum.attribute('gamepedia.subtitle')
-            ? m('p.Hero-subtitle', app.forum.attribute('gamepedia.subtitle'))
+    return m(".IndexPage.GamepediaPage", [
+      m("header.Hero.GamepediaHero", [
+        m(".container", [
+          m("h1.Hero-title", [m("i.fas.fa-gamepad"), " Gamepedia"]),
+          app.forum.attribute("gamepediaSubtitle")
+            ? m("p.Hero-subtitle", app.forum.attribute("gamepediaSubtitle"))
             : null,
         ]),
       ]),
-      m('.container', [
-        m('.sideNavContainer', [
-          m('nav.IndexPage-nav.sideNav', [
-            m('ul', listItems(IndexPage.prototype.sidebarItems().toArray())),
+      m(".container", [
+        m(".sideNavContainer", [
+          m("nav.IndexPage-nav.sideNav", [
+            m("ul", listItems(IndexPage.prototype.sidebarItems().toArray())),
           ]),
-          m('.sideNavOffset', [this.viewContent()]),
+          m(".sideNavOffset", [this.viewContent()]),
         ]),
       ]),
     ]);
   }
 
   viewContent() {
-    const m = window.m;
-    return m('div', [
-      m('.GamepediaFilters', [
-        m('input.FormControl.GamepediaFilters-search', {
-          type:        'text',
-          placeholder: 'Search games...',
+    return m("div", [
+      m(".GamepediaFilters", [
+        m("input.FormControl.GamepediaFilters-search", {
+          type:        "text",
+          placeholder: "Search games...",
           value:       this.search,
           oninput:     (e) => {
             this.search = e.target.value;
@@ -210,55 +212,54 @@ class GamepediaPage extends Page {
             this.searchTimer = setTimeout(() => this.loadGames(1), 400);
           },
         }),
-        m('select.FormControl.GamepediaFilters-genre', {
+        m("select.FormControl.GamepediaFilters-genre", {
           value:    this.genre,
           onchange: (e) => { this.genre = e.target.value; this.loadGames(1); },
         }, [
-          m('option', { value: '' }, 'All Genres'),
-          ...this.genres.map((g) => m('option', { value: g.slug, selected: this.genre === g.slug }, g.name)),
+          m("option", { value: "" }, "All Genres"),
+          ...this.genres.map((g) => m("option", { value: g.slug, selected: this.genre === g.slug }, g.name)),
         ]),
-        m('select.FormControl.GamepediaFilters-year', {
+        m("select.FormControl.GamepediaFilters-year", {
           value:    this.year,
           onchange: (e) => { this.year = e.target.value; this.loadGames(1); },
         }, [
-          m('option', { value: '' }, 'All Years'),
-          ...this.years.map((y) => m('option', { value: y, selected: this.year == y }, y)),
+          m("option", { value: "" }, "All Years"),
+          ...this.years.map((y) => m("option", { value: y, selected: this.year == y }, y)),
         ]),
-        m('select.FormControl.GamepediaFilters-sort', {
+        m("select.FormControl.GamepediaFilters-sort", {
           value:    this.sort,
           onchange: (e) => { this.sort = e.target.value; this.loadGames(1); },
         }, [
-          m('option', { value: 'newest' }, 'Newest Added'),
-          m('option', { value: 'oldest' }, 'Oldest Added'),
-          m('option', { value: 'az' },     'A → Z'),
-          m('option', { value: 'za' },     'Z → A'),
+          m("option", { value: "newest" }, "Newest Added"),
+          m("option", { value: "oldest" }, "Oldest Added"),
+          m("option", { value: "az" },     "A → Z"),
+          m("option", { value: "za" },     "Z → A"),
         ]),
       ]),
 
-      this.loading && m('.GamepediaGrid-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading games...']),
-      this.error   && m('.Alert.Alert--error', this.error),
+      this.loading && m(".GamepediaGrid-loading", [m("i.fas.fa-spinner.fa-spin"), " Loading games..."]),
+      this.error   && m(".Alert.Alert--error", this.error),
 
-      !this.loading && this.games.length === 0 && m('.GamepediaGrid-empty', 'No games found.'),
-      !this.loading && this.games.length > 0   && m('.GamepediaGrid',
+      !this.loading && this.games.length === 0 && m(".GamepediaGrid-empty", "No games found."),
+      !this.loading && this.games.length > 0   && m(".GamepediaGrid",
         this.games.map((game) => this.viewCard(game))
       ),
 
-      !this.loading && this.totalPages > 1 && m('.GamepediaPagination', [
-        this.currentPage > 1 && m('button.Button', {
+      !this.loading && this.totalPages > 1 && m(".GamepediaPagination", [
+        this.currentPage > 1 && m("button.Button", {
           onclick: () => this.loadGames(this.currentPage - 1),
-        }, [m('i.fas.fa-chevron-left'), ' Previous']),
-        m('span.GamepediaPagination-info', 'Page ' + this.currentPage + ' of ' + this.totalPages),
-        this.currentPage < this.totalPages && m('button.Button', {
+        }, [m("i.fas.fa-chevron-left"), " Previous"]),
+        m("span.GamepediaPagination-info", "Page " + this.currentPage + " of " + this.totalPages),
+        this.currentPage < this.totalPages && m("button.Button", {
           onclick: () => this.loadGames(this.currentPage + 1),
-        }, ['Next ', m('i.fas.fa-chevron-right')]),
+        }, ["Next ", m("i.fas.fa-chevron-right")]),
       ]),
     ]);
   }
 
   loadGames(page) {
-    const m = window.m;
     this.loading     = true;
-    this.currentPage = page || parseInt(m.route.param('page')) || 1;
+    this.currentPage = page || parseInt(m.route.param("page")) || 1;
     m.redraw();
 
     const params = { page: this.currentPage };
@@ -268,8 +269,8 @@ class GamepediaPage extends Page {
     if (this.sort)   params.sort   = this.sort;
 
     app.request({
-      method: 'GET',
-      url:    app.forum.attribute('apiUrl') + '/gamepedia/games',
+      method: "GET",
+      url:    app.forum.attribute("apiUrl") + "/gamepedia/games",
       params,
     }).then((response) => {
       this.loading    = false;
@@ -281,82 +282,79 @@ class GamepediaPage extends Page {
       m.redraw();
     }).catch(() => {
       this.loading = false;
-      this.error   = 'Failed to load games.';
+      this.error   = "Failed to load games.";
       m.redraw();
     });
   }
 
   viewCard(game) {
-    const m = window.m;
-    return m('a.GameCard', {
+    return m("a.GameCard", {
       key:      game.id,
-      href:     app.route('gamepedia.game', { slug: game.slug }),
+      href:     app.route("gamepedia.game", { slug: game.slug }),
       oncreate: m.route.link,
     }, [
-      m('.GameCard-cover', [
+      m(".GameCard-cover", [
         game.cover_image_url
-          ? m('img', { src: game.cover_image_url, alt: game.name, loading: 'lazy' })
-          : m('.GameCard-noCover', m('i.fas.fa-gamepad')),
+          ? m("img", { src: game.cover_image_url, alt: game.name, loading: "lazy" })
+          : m(".GameCard-noCover", m("i.fas.fa-gamepad")),
       ]),
-      m('.GameCard-info', [
-        m('.GameCard-title', game.name),
-        game.release_year ? m('.GameCard-year', game.release_year) : null,
+      m(".GameCard-info", [
+        m(".GameCard-title", game.name),
+        game.release_year ? m(".GameCard-year", game.release_year) : null,
       ]),
     ]);
   }
 }
 
-// ─── Game Detail Page ─────────────────────────────────────────────────────────
-
+// ---------------------------------------------------------------------------
+// GameDetailPage — individual game page at /gamepedia/:slug
+// ---------------------------------------------------------------------------
 class GameDetailPage extends Page {
   oninit(vnode) {
     super.oninit(vnode);
     this.game      = null;
     this.loading   = true;
     this.error     = null;
-    this.bodyClass = 'App--gamepedia';
-    this.loadGame(window.m.route.param('slug'));
+    this.bodyClass = "App--gamepedia";
+    this.loadGame(m.route.param("slug"));
   }
 
   loadGame(slug) {
-    const m = window.m;
     app.request({
-      method: 'GET',
-      url:    app.forum.attribute('apiUrl') + '/gamepedia/games/' + slug,
+      method: "GET",
+      url:    app.forum.attribute("apiUrl") + "/gamepedia/games/" + slug,
     }).then((response) => {
       this.loading = false;
       this.game    = response.data || null;
       m.redraw();
     }).catch(() => {
       this.loading = false;
-      this.error   = 'Game not found.';
+      this.error   = "Game not found.";
       m.redraw();
     });
   }
 
   view() {
-    const m = window.m;
-
     if (this.loading) {
-      return m('.IndexPage.GameDetailPage', [
-        m('.container', [
-          m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-            m('.sideNavOffset', m('.GameDetail-loading', [m('i.fas.fa-spinner.fa-spin'), ' Loading...'])),
+      return m(".IndexPage.GameDetailPage", [
+        m(".container", [
+          m(".sideNavContainer", [
+            m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+            m(".sideNavOffset", m(".GameDetail-loading", [m("i.fas.fa-spinner.fa-spin"), " Loading..."])),
           ]),
         ]),
       ]);
     }
 
     if (this.error || !this.game) {
-      return m('.IndexPage.GameDetailPage', [
-        m('.container', [
-          m('.sideNavContainer', [
-            m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-            m('.sideNavOffset', [
-              m('.Alert.Alert--error', this.error || 'Game not found.'),
-              m('a.Button', { href: app.route('gamepedia'), oncreate: m.route.link }, [
-                m('i.fas.fa-arrow-left'), ' Back to Gamepedia',
+      return m(".IndexPage.GameDetailPage", [
+        m(".container", [
+          m(".sideNavContainer", [
+            m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+            m(".sideNavOffset", [
+              m(".Alert.Alert--error", this.error || "Game not found."),
+              m("a.Button", { href: app.route("gamepedia"), oncreate: m.route.link }, [
+                m("i.fas.fa-arrow-left"), " Back to Gamepedia",
               ]),
             ]),
           ]),
@@ -366,116 +364,110 @@ class GameDetailPage extends Page {
 
     const game = this.game;
 
-    return m('.IndexPage.GameDetailPage', [
-
-      m('.GameDetailHero', {
+    return m(".IndexPage.GameDetailPage", [
+      m(".GameDetailHero", {
         style: game.cover_image_url
-          ? 'background-image: url(' + game.cover_image_url.replace('cover_big', '1080p') + ')'
-          : '',
+          ? "background-image: url(" + game.cover_image_url.replace("cover_big", "1080p") + ")"
+          : "",
       }, [
-        m('.GameDetailHero-overlay', [
-          m('.container', [
-            m('.GameDetailHero-content', [
-              m('.GameDetailHero-cover', [
+        m(".GameDetailHero-overlay", [
+          m(".container", [
+            m(".GameDetailHero-content", [
+              m(".GameDetailHero-cover", [
                 game.cover_image_url
-                  ? m('img', { src: game.cover_image_url, alt: game.name })
-                  : m('.GameDetailHero-noCover', m('i.fas.fa-gamepad')),
+                  ? m("img", { src: game.cover_image_url, alt: game.name })
+                  : m(".GameDetailHero-noCover", m("i.fas.fa-gamepad")),
               ]),
-              m('.GameDetailHero-info', [
-                m('h1.GameDetailHero-title', game.name),
-                game.release_date ? m('p.GameDetailHero-date', [m('i.fas.fa-calendar-alt'), ' ', game.release_date]) : null,
-                game.developer    ? m('p.GameDetailHero-developer', [
-                  m('i.fas.fa-code'), ' ', game.developer,
-                  game.publisher && game.publisher !== game.developer ? [' / ', game.publisher] : null,
+              m(".GameDetailHero-info", [
+                m("h1.GameDetailHero-title", game.name),
+                game.release_date ? m("p.GameDetailHero-date", [m("i.fas.fa-calendar-alt"), " ", game.release_date]) : null,
+                game.developer ? m("p.GameDetailHero-developer", [
+                  m("i.fas.fa-code"), " ", game.developer,
+                  game.publisher && game.publisher !== game.developer ? [" / ", game.publisher] : null,
                 ]) : null,
-                game.genres && game.genres.length > 0 ? m('.GameDetailHero-genres',
-                  game.genres.map((g) => m('a.GameDetailGenreTag', {
-                    href:     app.route('gamepedia') + '?genre=' + g.slug,
+                game.genres && game.genres.length > 0 ? m(".GameDetailHero-genres",
+                  game.genres.map((g) => m("a.GameDetailGenreTag", {
+                    href:     app.route("gamepedia") + "?genre=" + g.slug,
                     oncreate: m.route.link,
                   }, g.name))
                 ) : null,
-                m('a.Button.Button--primary.GameDetailHero-back', {
-                  href:     app.route('gamepedia'),
+                m("a.Button.Button--primary.GameDetailHero-back", {
+                  href:     app.route("gamepedia"),
                   oncreate: m.route.link,
-                }, [m('i.fas.fa-arrow-left'), ' Back to Gamepedia']),
+                }, [m("i.fas.fa-arrow-left"), " Back to Gamepedia"]),
               ]),
             ]),
           ]),
         ]),
       ]),
 
-      m('.container', [
-        m('.sideNavContainer', [
-          m('nav.IndexPage-nav.sideNav', [m('ul', listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-          m('.sideNavOffset', [
-            m('.GameDetailBody', [
+      m(".container", [
+        m(".sideNavContainer", [
+          m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
+          m(".sideNavOffset", [
+            m(".GameDetailBody", [
 
-              // 1. Trailer — full width
-              game.trailer_youtube_id ? m('.GameDetailSection', [
-                m('h3.GameDetailSection-title', 'Trailer'),
-                m('.GameDetailTrailer', [
-                  m('iframe', {
-                    src:             'https://www.youtube-nocookie.com/embed/' + game.trailer_youtube_id + '?rel=0',
-                    title:           game.name + ' trailer',
-                    allow:           'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-                    referrerpolicy:  'strict-origin-when-cross-origin',
+              game.trailer_youtube_id ? m(".GameDetailSection", [
+                m("h3.GameDetailSection-title", "Trailer"),
+                m(".GameDetailTrailer", [
+                  m("iframe", {
+                    src:             "https://www.youtube-nocookie.com/embed/" + game.trailer_youtube_id + "?rel=0",
+                    title:           game.name + " trailer",
+                    allow:           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+                    referrerpolicy:  "strict-origin-when-cross-origin",
                     allowfullscreen: true,
-                    frameborder:     '0',
+                    frameborder:     "0",
                   }),
                 ]),
               ]) : null,
 
-              // 2. About + Game Info — side by side
-              m('.GameDetailMid', [
-                game.summary ? m('.GameDetailSection.GameDetailMid-about', [
-                  m('h3.GameDetailSection-title', 'About'),
-                  m('p.GameDetailSummary', game.summary),
+              m(".GameDetailMid", [
+                game.summary ? m(".GameDetailSection.GameDetailMid-about", [
+                  m("h3.GameDetailSection-title", "About"),
+                  m("p.GameDetailSummary", game.summary),
                 ]) : null,
-
-                m('.GameDetailInfoCard', [
-                  m('h3.GameDetailInfoCard-title', 'Game Info'),
-                  game.developer    ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Developer'), m('span.GameDetailInfoCard-value', game.developer)])    : null,
-                  game.publisher    ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Publisher'), m('span.GameDetailInfoCard-value', game.publisher)])    : null,
-                  game.release_date ? m('.GameDetailInfoCard-row', [m('span.GameDetailInfoCard-label', 'Released'),  m('span.GameDetailInfoCard-value', game.release_date)]) : null,
-                  game.genres && game.genres.length > 0 ? m('.GameDetailInfoCard-row', [
-                    m('span.GameDetailInfoCard-label', 'Genres'),
-                    m('span.GameDetailInfoCard-value', game.genres.map((g) => g.name).join(', ')),
+                m(".GameDetailInfoCard", [
+                  m("h3.GameDetailInfoCard-title", "Game Info"),
+                  game.developer    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Developer"), m("span.GameDetailInfoCard-value", game.developer)])    : null,
+                  game.publisher    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Publisher"), m("span.GameDetailInfoCard-value", game.publisher)])    : null,
+                  game.release_date ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Released"),  m("span.GameDetailInfoCard-value", game.release_date)]) : null,
+                  game.genres && game.genres.length > 0 ? m(".GameDetailInfoCard-row", [
+                    m("span.GameDetailInfoCard-label", "Genres"),
+                    m("span.GameDetailInfoCard-value", game.genres.map((g) => g.name).join(", ")),
                   ]) : null,
                 ]),
               ]),
 
-              // 3. Related Discussions — full width
-              m('.GameDetailSection', [
-                m('h3.GameDetailSection-title', 'Related Discussions'),
+              m(".GameDetailSection", [
+                m("h3.GameDetailSection-title", "Related Discussions"),
                 game.related_discussions && game.related_discussions.length > 0
-                  ? m('.GameDetailDiscussions',
-                      game.related_discussions.map((d) => m('a.GameDetailDiscussion', {
+                  ? m(".GameDetailDiscussions",
+                      game.related_discussions.map((d) => m("a.GameDetailDiscussion", {
                         key:      d.id,
-                        href:     app.route('discussion', { id: d.id + (d.slug ? '-' + d.slug : '') }),
+                        href:     app.route("discussion", { id: d.id + (d.slug ? "-" + d.slug : "") }),
                         oncreate: m.route.link,
                       }, [
                         d.user_avatar
-                          ? m('img.GameDetailDiscussion-avatar', { src: d.user_avatar, alt: d.user_username || '' })
-                          : m('.GameDetailDiscussion-avatarFallback', m('i.fas.fa-user')),
-                        m('.GameDetailDiscussion-body', [
-                          m('.GameDetailDiscussion-title', d.title),
-                          m('.GameDetailDiscussion-meta', [m('i.fas.fa-comment'), ' ', d.comment_count]),
+                          ? m("img.GameDetailDiscussion-avatar", { src: d.user_avatar, alt: d.user_username || "" })
+                          : m(".GameDetailDiscussion-avatarFallback", m("i.fas.fa-user")),
+                        m(".GameDetailDiscussion-body", [
+                          m(".GameDetailDiscussion-title", d.title),
+                          m(".GameDetailDiscussion-meta", [m("i.fas.fa-comment"), " ", d.comment_count]),
                         ]),
                       ]))
                     )
-                  : m('p.helpText', 'No discussions yet. Be the first to post about this game!'),
+                  : m("p.helpText", "No discussions yet. Be the first to post about this game!"),
               ]),
 
-              // 4. Screenshots — full width
-              game.screenshots && game.screenshots.length > 0 ? m('.GameDetailSection', [
-                m('h3.GameDetailSection-title', 'Screenshots'),
-                m('.GameDetailScreenshots',
-                  game.screenshots.map((s, idx) => m('a.GameDetailScreenshot', {
+              game.screenshots && game.screenshots.length > 0 ? m(".GameDetailSection", [
+                m("h3.GameDetailSection-title", "Screenshots"),
+                m(".GameDetailScreenshots",
+                  game.screenshots.map((s, idx) => m("a.GameDetailScreenshot", {
                     key:     s.id,
-                    href:    '#',
+                    href:    "#",
                     onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
                   }, [
-                    m('img', { src: s.url, alt: game.name, loading: 'lazy' }),
+                    m("img", { src: s.url, alt: game.name, loading: "lazy" }),
                   ]))
                 ),
               ]) : null,
@@ -488,9 +480,9 @@ class GameDetailPage extends Page {
   }
 }
 
-// ─── Composer Game Linking ────────────────────────────────────────────────────
-
-// Helper to get/init the linked games list on a composer instance
+// ---------------------------------------------------------------------------
+// Composer helpers — game linking
+// ---------------------------------------------------------------------------
 function getLinkedGames(composer) {
   if (!composer.fields.gamepediaGames) {
     composer.fields.gamepediaGames = [];
@@ -500,10 +492,10 @@ function getLinkedGames(composer) {
 
 function openGamePicker(composer) {
   const linked = getLinkedGames(composer);
-  const max    = app.forum.attribute('gamepedia.maxGamesPerDiscussion') || 3;
+  const max    = app.forum.attribute("gamepediaMaxGamesPerDiscussion") || 3;
 
   if (linked.length >= max) {
-    app.alerts.show({ type: 'error' }, 'You can only link up to ' + max + ' game(s) per discussion.');
+    app.alerts.show({ type: "error" }, "You can only link up to " + max + " game(s) per discussion.");
     return;
   }
 
@@ -512,43 +504,42 @@ function openGamePicker(composer) {
     onSelect: (game) => {
       if (!linked.some((g) => g.id === game.id)) {
         linked.push(game);
-        window.m.redraw();
+        m.redraw();
       }
     },
   });
 }
 
-// Render linked game chips below the composer footer
 function viewGameChips(composer) {
-  const m      = window.m;
   const linked = getLinkedGames(composer);
   if (linked.length === 0) return null;
 
-  return m('.GamepediaComposer-chips',
-    linked.map((game) => m('.GamepediaComposer-chip', { key: game.id }, [
+  return m(".GamepediaComposer-chips",
+    linked.map((game) => m(".GamepediaComposer-chip", { key: game.id }, [
       game.cover_image_url
-        ? m('img', { src: game.cover_image_url, alt: game.name })
-        : m('i.fas.fa-gamepad'),
-      m('span', game.name),
-      m('button.GamepediaComposer-chip-remove', {
-        title:   'Remove',
+        ? m("img", { src: game.cover_image_url, alt: game.name })
+        : m("i.fas.fa-gamepad"),
+      m("span", game.name),
+      m("button.GamepediaComposer-chip-remove", {
+        title:   "Remove",
         onclick: () => {
           const idx = linked.indexOf(game);
           if (idx > -1) { linked.splice(idx, 1); m.redraw(); }
         },
-      }, '✕'),
+      }, "✕"),
     ]))
   );
 }
 
-// ─── Game Card Slideshow ──────────────────────────────────────────────────────
-
+// ---------------------------------------------------------------------------
+// GameCardSlideshow — desktop sidebar card on discussion page
+// ---------------------------------------------------------------------------
 class GameCardSlideshow {
   oninit(vnode) {
-    this.games    = vnode.attrs.games;
-    this.current  = 0;
-    this.rafId    = null;
-    this.barEl    = null; // direct DOM reference to progress bar
+    this.games   = vnode.attrs.games;
+    this.current = 0;
+    this.rafId   = null;
+    this.barEl   = null;
   }
 
   oncreate() {
@@ -560,7 +551,7 @@ class GameCardSlideshow {
   }
 
   getDuration() {
-    return (parseInt(app.forum.attribute('gamepedia.slideshow_interval')) || 4) * 1000;
+    return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000;
   }
 
   startCycle() {
@@ -570,15 +561,12 @@ class GameCardSlideshow {
     const tick = (now) => {
       const elapsed = now - start;
       const pct = Math.min((elapsed / duration) * 100, 100);
-
-      // Write progress directly to DOM — no Mithril redraw needed
-      if (this.barEl) this.barEl.style.width = pct + '%';
+      if (this.barEl) this.barEl.style.width = pct + "%";
 
       if (elapsed >= duration) {
         this.current = (this.current + 1) % this.games.length;
         start = performance.now();
-        window.m.redraw(); // only redraw when card actually changes
-        // barEl reference will be refreshed by onupdate after redraw
+        m.redraw();
       }
 
       this.rafId = requestAnimationFrame(tick);
@@ -588,34 +576,34 @@ class GameCardSlideshow {
   }
 
   view() {
-    const m    = window.m;
     const game = this.games[this.current];
 
-    return m('a.DiscussionGameCard', {
-      href:     app.route('gamepedia.game', { slug: game.slug }),
+    return m("a.DiscussionGameCard", {
+      href:     app.route("gamepedia.game", { slug: game.slug }),
       oncreate: m.route.link,
     }, [
-      m('.DiscussionGameCard-cover', [
+      m(".DiscussionGameCard-cover", [
         game.cover_image_url
-          ? m('img', { src: game.cover_image_url, alt: game.name })
-          : m('.DiscussionGameCard-noCover', m('i.fas.fa-gamepad')),
+          ? m("img", { src: game.cover_image_url, alt: game.name })
+          : m(".DiscussionGameCard-noCover", m("i.fas.fa-gamepad")),
       ]),
-      m('.DiscussionGameCard-info', [
-        m('.DiscussionGameCard-name', game.name),
-        game.release_year ? m('.DiscussionGameCard-year', game.release_year) : null,
+      m(".DiscussionGameCard-info", [
+        m(".DiscussionGameCard-name", game.name),
+        game.release_year ? m(".DiscussionGameCard-year", game.release_year) : null,
       ]),
-      this.games.length > 1 && m('.DiscussionGameCard-progress', [
-        m('.DiscussionGameCard-progress-bar', {
-          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
-          onupdate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
+      this.games.length > 1 && m(".DiscussionGameCard-progress", [
+        m(".DiscussionGameCard-progress-bar", {
+          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = "0%"; },
+          onupdate: (vnode) => { this.barEl = vnode.dom; },
         }),
       ]),
     ]);
   }
 }
 
-// ─── Game Banner Slideshow (mobile) ──────────────────────────────────────────
-
+// ---------------------------------------------------------------------------
+// GameBannerSlideshow — mobile banner on discussion page
+// ---------------------------------------------------------------------------
 class GameBannerSlideshow {
   oninit(vnode) {
     this.games   = vnode.attrs.games;
@@ -633,7 +621,7 @@ class GameBannerSlideshow {
   }
 
   getDuration() {
-    return (parseInt(app.forum.attribute('gamepedia.slideshow_interval')) || 4) * 1000;
+    return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000;
   }
 
   startCycle() {
@@ -643,13 +631,12 @@ class GameBannerSlideshow {
     const tick = (now) => {
       const elapsed = now - start;
       const pct = Math.min((elapsed / duration) * 100, 100);
-
-      if (this.barEl) this.barEl.style.width = pct + '%';
+      if (this.barEl) this.barEl.style.width = pct + "%";
 
       if (elapsed >= duration) {
         this.current = (this.current + 1) % this.games.length;
         start = performance.now();
-        window.m.redraw();
+        m.redraw();
       }
 
       this.rafId = requestAnimationFrame(tick);
@@ -659,116 +646,109 @@ class GameBannerSlideshow {
   }
 
   view() {
-    const m    = window.m;
     const game = this.games[this.current];
 
-    return m('a.GameBanner', {
-      href:     app.route('gamepedia.game', { slug: game.slug }),
+    return m("a.GameBanner", {
+      href:     app.route("gamepedia.game", { slug: game.slug }),
       oncreate: m.route.link,
-      style:    game.cover_image_url
-        ? { backgroundImage: 'url(' + game.cover_image_url + ')' }
-        : {},
+      style:    game.cover_image_url ? { backgroundImage: "url(" + game.cover_image_url + ")" } : {},
     }, [
-      m('.GameBanner-overlay', [
-        game.cover_image_url && m('.GameBanner-thumb', [
-          m('img', { src: game.cover_image_url, alt: game.name }),
+      m(".GameBanner-overlay", [
+        game.cover_image_url && m(".GameBanner-thumb", [
+          m("img", { src: game.cover_image_url, alt: game.name }),
         ]),
-        m('.GameBanner-info', [
-          m('.GameBanner-name', game.name),
-          game.release_year ? m('.GameBanner-year', game.release_year) : null,
+        m(".GameBanner-info", [
+          m(".GameBanner-name", game.name),
+          game.release_year ? m(".GameBanner-year", game.release_year) : null,
         ]),
       ]),
-      this.games.length > 1 && m('.GameBanner-progress', [
-        m('.GameBanner-progress-bar', {
-          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
-          onupdate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = '0%'; },
+      this.games.length > 1 && m(".GameBanner-progress", [
+        m(".GameBanner-progress-bar", {
+          oncreate: (vnode) => { this.barEl = vnode.dom; this.barEl.style.width = "0%"; },
+          onupdate: (vnode) => { this.barEl = vnode.dom; },
         }),
       ]),
     ]);
   }
 }
 
-// ─── Initializer ─────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Initializer
+// ---------------------------------------------------------------------------
+app.initializers.add("resofire-gamepedia", function () {
 
-app.initializers.add('resofire-gamepedia', function () {
   // Forum routes
-  app.routes['gamepedia']      = { path: '/gamepedia',       component: GamepediaPage };
-  app.routes['gamepedia.game'] = { path: '/gamepedia/:slug', component: GameDetailPage };
+  app.routes["gamepedia"]      = { path: "/gamepedia",       component: GamepediaPage };
+  app.routes["gamepedia.game"] = { path: "/gamepedia/:slug", component: GameDetailPage };
 
-  // Sidenav link — only show if actor can view Gamepedia
-  extend(IndexPage.prototype, 'navItems', function (items) {
-    if (!app.forum.attribute('gamepedia.canView') && !app.session.user?.isAdmin()) return;
-
-    items.add('gamepedia', m(LinkButton, {
-      href: app.route('gamepedia'),
-      icon: 'fas fa-gamepad',
-    }, 'Gamepedia'), 80);
+  // Sidenav link
+  extend(IndexPage.prototype, "navItems", function (items) {
+    if (!app.forum.attribute("gamepediaCanView") && !app.session.user?.isAdmin()) return;
+    items.add("gamepedia", m(LinkButton, {
+      href: app.route("gamepedia"),
+      icon: "fas fa-gamepad",
+    }, "Gamepedia"), 80);
   });
 
-  // Ctrl+Shift+G keyboard shortcut to open game picker from composer
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+  // Keyboard shortcut Ctrl+Shift+G to open game picker
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === "G") {
       e.preventDefault();
       const composer = app.composer;
       if (composer && composer.isVisible()) {
-        if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
-        if (!(composer.body.componentClass === DiscussionComposer)) return;
+        if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
+        // Check composer body class via string path — DiscussionComposer is a chunk module
+        const DiscussionComposer = flarum.reg.get("core", "forum/components/DiscussionComposer");
+        if (!DiscussionComposer || !(composer.body.componentClass === DiscussionComposer)) return;
         openGamePicker(composer);
       }
     }
   });
 
-  // Game badges on discussion list items — DISABLED (Stage 12 decision: list badges off by default)
-  // extend(DiscussionListItem.prototype, 'infoItems', ...)
-
-  // Game cards in discussion sidebar — between controls (Reply/Follow) and scrubber
-  // Desktop only — hidden on mobile via CSS
-  extend(DiscussionPage.prototype, 'sidebarItems', function (items) {
+  // Game cards in discussion sidebar — string-path for chunk module DiscussionPage
+  extend("flarum/forum/components/DiscussionPage", "sidebarItems", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
-
-    const games = discussion.attribute('gamepediaGames');
+    const games = discussion.attribute("gamepediaGames");
     if (!games || games.length === 0) return;
-
-    items.add('gamepediaGames', window.m(GameCardSlideshow, { games }), 50);
+    items.add("gamepediaGames", m(GameCardSlideshow, { games }), 50);
   });
 
-  // Mobile game banner — injected between hero and posts, hidden on desktop via CSS
-  extend(DiscussionPage.prototype, 'pageContent', function (items) {
+  // Mobile banner — string-path for chunk module DiscussionPage
+  extend("flarum/forum/components/DiscussionPage", "pageContent", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
-
-    const games = discussion.attribute('gamepediaGames');
+    const games = discussion.attribute("gamepediaGames");
     if (!games || games.length === 0) return;
-
-    items.add('gamepediaMobileBanner', window.m(GameBannerSlideshow, { games }), 50);
+    items.add("gamepediaMobileBanner", m(GameBannerSlideshow, { games }), 50);
   });
 
-  // Add gamepad button to the TextEditor toolbar — only for new discussions, not replies
-  extend(TextEditor.prototype, 'toolbarItems', function (items) {
+  // Gamepad toolbar button — string-path for chunk module TextEditor
+  extend("flarum/forum/components/TextEditor", "toolbarItems", function (items) {
     const composer = this.attrs.composer;
     if (!composer) return;
-    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
-    if (composer.body.componentClass !== DiscussionComposer) return;
-
-    items.add('gamepedia', m('button.Button.Button--icon.Button--link', {
-      title:   'Link a game',
+    if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
+    const DiscussionComposer = flarum.reg.get("core", "forum/components/DiscussionComposer");
+    if (!DiscussionComposer || composer.body.componentClass !== DiscussionComposer) return;
+    items.add("gamepedia", m("button.Button.Button--icon.Button--link", {
+      title:   "Link a game",
       onclick: () => openGamePicker(composer),
-    }, m('i.fas.fa-gamepad')), -10);
+    }, m("i.fas.fa-gamepad")), -10);
   });
 
-  // Inject game chips into DiscussionComposer only
-  extend(DiscussionComposer.prototype, 'headerItems', function (items) {
-    if (!app.forum.attribute('gamepedia.canLinkGame') && !app.session.user?.isAdmin()) return;
+  // Game chips in composer header — string-path for chunk module DiscussionComposer
+  extend("flarum/forum/components/DiscussionComposer", "headerItems", function (items) {
+    if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
-    if (chips) items.add('gamepediaChips', chips, -100);
+    if (chips) items.add("gamepediaChips", chips, -100);
   });
 
-  // Send linked game IDs with discussion creation only
-  extend(DiscussionComposer.prototype, 'data', function (data) {
+  // Send linked game IDs with discussion creation — string-path for chunk module
+  extend("flarum/forum/components/DiscussionComposer", "data", function (data) {
     const linked = getLinkedGames(this.composer);
     if (linked.length > 0) {
       data.gamepediaGameIds = linked.map((g) => g.id);
     }
   });
+
 });

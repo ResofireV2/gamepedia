@@ -19,6 +19,9 @@ use Resofire\Gamepedia\Api\Controllers\Admin\ListGenresController;
 use Resofire\Gamepedia\Api\Controllers\Admin\CreateGenreController;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGenreController;
 use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGenreController;
+use Flarum\Api\Resource;
+use Resofire\Gamepedia\Api\Serializers\ForumGamepediaAttributes;
+use Resofire\Gamepedia\Api\Serializers\DiscussionGameSerializer;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGameGenresController;
 
 return [
@@ -36,6 +39,24 @@ return [
         ->route('/gamepedia/{slug}', 'gamepedia.game'),
 
     new Extend\Locales(__DIR__ . '/locale'),
+
+    // Flarum 2.x: Plain settings serialized to forum JS.
+    // Field names are camelCase — dots are not valid in JSON:API field names.
+    (new Extend\Settings())
+        ->serializeToForum('gamepediaSubtitle',              'gamepedia.subtitle')
+        ->default('gamepedia.subtitle', 'Browse the game library')
+        ->serializeToForum('gamepediaMaxGamesPerDiscussion', 'gamepedia.max_games_per_discussion')
+        ->default('gamepedia.max_games_per_discussion', 3)
+        ->serializeToForum('gamepediaSlideshowInterval',     'gamepedia.slideshow_interval')
+        ->default('gamepedia.slideshow_interval', 4),
+
+    // Actor-aware permission fields — require ApiResource with Context.
+    (new Extend\ApiResource(Resource\ForumResource::class))
+        ->fields(ForumGamepediaAttributes::class),
+
+    // gamepediaGames array on every discussion API response.
+    (new Extend\ApiResource(Resource\DiscussionResource::class))
+        ->fields(DiscussionGameSerializer::class),
 
     (new Extend\Routes('api'))
         ->get('/gamepedia/games',              'gamepedia.games.index',           ListGamesPublicController::class)

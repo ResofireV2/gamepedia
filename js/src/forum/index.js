@@ -1,18 +1,12 @@
 "use strict";
 
-// ---------------------------------------------------------------------------
-// Imports — all via flarum.reg.get(), never import statements in dist JS.
-// Chunk modules (DiscussionPage, TextEditor, DiscussionComposer) are NOT
-// imported directly — they are referenced only via string-path extend/override.
-// ---------------------------------------------------------------------------
 const app              = flarum.reg.get("core", "forum/app");
 const { extend }       = flarum.reg.get("core", "common/extend");
 const Modal            = flarum.reg.get("core", "common/components/Modal");
-const Button           = flarum.reg.get("core", "common/components/Button");
 const Page             = flarum.reg.get("core", "common/components/Page");
 const LinkButton       = flarum.reg.get("core", "common/components/LinkButton");
-const LoadingIndicator = flarum.reg.get("core", "common/components/LoadingIndicator");
-const listItems        = flarum.reg.get("core", "common/helpers/listItems");
+const PageStructure    = flarum.reg.get("core", "forum/components/PageStructure");
+const IndexSidebar     = flarum.reg.get("core", "forum/components/IndexSidebar");
 const IndexPage        = flarum.reg.get("core", "forum/components/IndexPage");
 // Chunk modules — string-path only:
 // flarum/forum/components/DiscussionPage
@@ -20,7 +14,7 @@ const IndexPage        = flarum.reg.get("core", "forum/components/IndexPage");
 // flarum/forum/components/DiscussionComposer
 
 // ---------------------------------------------------------------------------
-// Simple Lightbox — pure DOM, no Mithril needed
+// Simple Lightbox
 // ---------------------------------------------------------------------------
 function openLightbox(screenshots, startIndex) {
   const existing = document.getElementById("gp-lightbox");
@@ -33,7 +27,7 @@ function openLightbox(screenshots, startIndex) {
     if (!lb) return;
     const img     = lb.querySelector(".gp-lb-img");
     const counter = lb.querySelector(".gp-lb-counter");
-    if (img)     img.src           = screenshots[current].url;
+    if (img)     img.src            = screenshots[current].url;
     if (counter) counter.textContent = (current + 1) + " / " + screenshots.length;
     lb.querySelector(".gp-lb-prev").style.display = current > 0                      ? "" : "none";
     lb.querySelector(".gp-lb-next").style.display = current < screenshots.length - 1 ? "" : "none";
@@ -72,7 +66,7 @@ function openLightbox(screenshots, startIndex) {
 }
 
 // ---------------------------------------------------------------------------
-// GamePickerModal — searches local Gamepedia library, returns selection
+// GamePickerModal
 // ---------------------------------------------------------------------------
 class GamePickerModal extends Modal {
   oninit(vnode) {
@@ -119,10 +113,7 @@ class GamePickerModal extends Modal {
       key:     game.id,
       onclick: (e) => {
         e.preventDefault();
-        if (!isLinked) {
-          this.attrs.onSelect(game);
-          this.hide();
-        }
+        if (!isLinked) { this.attrs.onSelect(game); this.hide(); }
       },
     }, [
       game.cover_image_url
@@ -137,27 +128,18 @@ class GamePickerModal extends Modal {
   }
 
   search() {
-    this.loading = true;
-    m.redraw();
-
+    this.loading = true; m.redraw();
     app.request({
       method: "GET",
       url:    app.forum.attribute("apiUrl") + "/gamepedia/games",
       params: { search: this.query, page: 1 },
-    }).then((response) => {
-      this.loading = false;
-      this.results = response.data || [];
-      m.redraw();
-    }).catch(() => {
-      this.loading = false;
-      this.results = [];
-      m.redraw();
-    });
+    }).then((r) => { this.loading = false; this.results = r.data || []; m.redraw(); })
+      .catch(() => { this.loading = false; this.results = []; m.redraw(); });
   }
 }
 
 // ---------------------------------------------------------------------------
-// GamepediaPage — browse page at /gamepedia
+// GamepediaPage — uses PageStructure + IndexSidebar (2.x pattern)
 // ---------------------------------------------------------------------------
 class GamepediaPage extends Page {
   oninit(vnode) {
@@ -179,8 +161,9 @@ class GamepediaPage extends Page {
   }
 
   view() {
-    return m(".IndexPage.GamepediaPage", [
-      m("header.Hero.GamepediaHero", [
+    return m(PageStructure, {
+      className: "GamepediaPage",
+      hero:      () => m("header.Hero.GamepediaHero", [
         m(".container", [
           m("h1.Hero-title", [m("i.fas.fa-gamepad"), " Gamepedia"]),
           app.forum.attribute("gamepediaSubtitle")
@@ -188,15 +171,8 @@ class GamepediaPage extends Page {
             : null,
         ]),
       ]),
-      m(".container", [
-        m(".sideNavContainer", [
-          m("nav.IndexPage-nav.sideNav", [
-            m("ul", listItems(IndexPage.prototype.sidebarItems().toArray())),
-          ]),
-          m(".sideNavOffset", [this.viewContent()]),
-        ]),
-      ]),
-    ]);
+      sidebar: () => m(IndexSidebar),
+    }, this.viewContent());
   }
 
   viewContent() {
@@ -232,18 +208,15 @@ class GamepediaPage extends Page {
         }, [
           m("option", { value: "newest" }, "Newest Added"),
           m("option", { value: "oldest" }, "Oldest Added"),
-          m("option", { value: "az" },     "A → Z"),
-          m("option", { value: "za" },     "Z → A"),
+          m("option", { value: "az"     }, "A → Z"),
+          m("option", { value: "za"     }, "Z → A"),
         ]),
       ]),
 
       this.loading && m(".GamepediaGrid-loading", [m("i.fas.fa-spinner.fa-spin"), " Loading games..."]),
       this.error   && m(".Alert.Alert--error", this.error),
-
       !this.loading && this.games.length === 0 && m(".GamepediaGrid-empty", "No games found."),
-      !this.loading && this.games.length > 0   && m(".GamepediaGrid",
-        this.games.map((game) => this.viewCard(game))
-      ),
+      !this.loading && this.games.length > 0   && m(".GamepediaGrid", this.games.map((game) => this.viewCard(game))),
 
       !this.loading && this.totalPages > 1 && m(".GamepediaPagination", [
         this.currentPage > 1 && m("button.Button", {
@@ -272,13 +245,13 @@ class GamepediaPage extends Page {
       method: "GET",
       url:    app.forum.attribute("apiUrl") + "/gamepedia/games",
       params,
-    }).then((response) => {
+    }).then((r) => {
       this.loading    = false;
-      this.games      = response.data           || [];
-      this.totalPages = response.meta.last_page || 1;
-      this.total      = response.meta.total     || 0;
-      this.genres     = response.filters.genres || [];
-      this.years      = response.filters.years  || [];
+      this.games      = r.data           || [];
+      this.totalPages = r.meta.last_page || 1;
+      this.total      = r.meta.total     || 0;
+      this.genres     = r.filters.genres || [];
+      this.years      = r.filters.years  || [];
       m.redraw();
     }).catch(() => {
       this.loading = false;
@@ -307,7 +280,7 @@ class GamepediaPage extends Page {
 }
 
 // ---------------------------------------------------------------------------
-// GameDetailPage — individual game page at /gamepedia/:slug
+// GameDetailPage — uses PageStructure + IndexSidebar (2.x pattern)
 // ---------------------------------------------------------------------------
 class GameDetailPage extends Page {
   oninit(vnode) {
@@ -323,9 +296,9 @@ class GameDetailPage extends Page {
     app.request({
       method: "GET",
       url:    app.forum.attribute("apiUrl") + "/gamepedia/games/" + slug,
-    }).then((response) => {
+    }).then((r) => {
       this.loading = false;
-      this.game    = response.data || null;
+      this.game    = r.data || null;
       m.redraw();
     }).catch(() => {
       this.loading = false;
@@ -336,36 +309,25 @@ class GameDetailPage extends Page {
 
   view() {
     if (this.loading) {
-      return m(".IndexPage.GameDetailPage", [
-        m(".container", [
-          m(".sideNavContainer", [
-            m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-            m(".sideNavOffset", m(".GameDetail-loading", [m("i.fas.fa-spinner.fa-spin"), " Loading..."])),
-          ]),
-        ]),
-      ]);
+      return m(PageStructure, { className: "GameDetailPage", sidebar: () => m(IndexSidebar) },
+        m(".GameDetail-loading", [m("i.fas.fa-spinner.fa-spin"), " Loading..."])
+      );
     }
 
     if (this.error || !this.game) {
-      return m(".IndexPage.GameDetailPage", [
-        m(".container", [
-          m(".sideNavContainer", [
-            m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-            m(".sideNavOffset", [
-              m(".Alert.Alert--error", this.error || "Game not found."),
-              m("a.Button", { href: app.route("gamepedia"), oncreate: m.route.link }, [
-                m("i.fas.fa-arrow-left"), " Back to Gamepedia",
-              ]),
-            ]),
-          ]),
+      return m(PageStructure, { className: "GameDetailPage", sidebar: () => m(IndexSidebar) }, [
+        m(".Alert.Alert--error", this.error || "Game not found."),
+        m("a.Button", { href: app.route("gamepedia"), oncreate: m.route.link }, [
+          m("i.fas.fa-arrow-left"), " Back to Gamepedia",
         ]),
       ]);
     }
 
     const game = this.game;
 
-    return m(".IndexPage.GameDetailPage", [
-      m(".GameDetailHero", {
+    return m(PageStructure, {
+      className: "GameDetailPage",
+      hero: () => m(".GameDetailHero", {
         style: game.cover_image_url
           ? "background-image: url(" + game.cover_image_url.replace("cover_big", "1080p") + ")"
           : "",
@@ -400,112 +362,99 @@ class GameDetailPage extends Page {
           ]),
         ]),
       ]),
+      sidebar: () => m(IndexSidebar),
+    },
+      m(".GameDetailBody", [
 
-      m(".container", [
-        m(".sideNavContainer", [
-          m("nav.IndexPage-nav.sideNav", [m("ul", listItems(IndexPage.prototype.sidebarItems().toArray()))]),
-          m(".sideNavOffset", [
-            m(".GameDetailBody", [
+        game.trailer_youtube_id ? m(".GameDetailSection", [
+          m("h3.GameDetailSection-title", "Trailer"),
+          m(".GameDetailTrailer", [
+            m("iframe", {
+              src:             "https://www.youtube-nocookie.com/embed/" + game.trailer_youtube_id + "?rel=0",
+              title:           game.name + " trailer",
+              allow:           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+              referrerpolicy:  "strict-origin-when-cross-origin",
+              allowfullscreen: true,
+              frameborder:     "0",
+            }),
+          ]),
+        ]) : null,
 
-              game.trailer_youtube_id ? m(".GameDetailSection", [
-                m("h3.GameDetailSection-title", "Trailer"),
-                m(".GameDetailTrailer", [
-                  m("iframe", {
-                    src:             "https://www.youtube-nocookie.com/embed/" + game.trailer_youtube_id + "?rel=0",
-                    title:           game.name + " trailer",
-                    allow:           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
-                    referrerpolicy:  "strict-origin-when-cross-origin",
-                    allowfullscreen: true,
-                    frameborder:     "0",
-                  }),
-                ]),
-              ]) : null,
-
-              m(".GameDetailMid", [
-                game.summary ? m(".GameDetailSection.GameDetailMid-about", [
-                  m("h3.GameDetailSection-title", "About"),
-                  m("p.GameDetailSummary", game.summary),
-                ]) : null,
-                m(".GameDetailInfoCard", [
-                  m("h3.GameDetailInfoCard-title", "Game Info"),
-                  game.developer    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Developer"), m("span.GameDetailInfoCard-value", game.developer)])    : null,
-                  game.publisher    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Publisher"), m("span.GameDetailInfoCard-value", game.publisher)])    : null,
-                  game.release_date ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Released"),  m("span.GameDetailInfoCard-value", game.release_date)]) : null,
-                  game.genres && game.genres.length > 0 ? m(".GameDetailInfoCard-row", [
-                    m("span.GameDetailInfoCard-label", "Genres"),
-                    m("span.GameDetailInfoCard-value", game.genres.map((g) => g.name).join(", ")),
-                  ]) : null,
-                ]),
-              ]),
-
-              m(".GameDetailSection", [
-                m("h3.GameDetailSection-title", "Related Discussions"),
-                game.related_discussions && game.related_discussions.length > 0
-                  ? m(".GameDetailDiscussions",
-                      game.related_discussions.map((d) => m("a.GameDetailDiscussion", {
-                        key:      d.id,
-                        href:     app.route("discussion", { id: d.id + (d.slug ? "-" + d.slug : "") }),
-                        oncreate: m.route.link,
-                      }, [
-                        d.user_avatar
-                          ? m("img.GameDetailDiscussion-avatar", { src: d.user_avatar, alt: d.user_username || "" })
-                          : m(".GameDetailDiscussion-avatarFallback", m("i.fas.fa-user")),
-                        m(".GameDetailDiscussion-body", [
-                          m(".GameDetailDiscussion-title", d.title),
-                          m(".GameDetailDiscussion-meta", [m("i.fas.fa-comment"), " ", d.comment_count]),
-                        ]),
-                      ]))
-                    )
-                  : m("p.helpText", "No discussions yet. Be the first to post about this game!"),
-              ]),
-
-              game.screenshots && game.screenshots.length > 0 ? m(".GameDetailSection", [
-                m("h3.GameDetailSection-title", "Screenshots"),
-                m(".GameDetailScreenshots",
-                  game.screenshots.map((s, idx) => m("a.GameDetailScreenshot", {
-                    key:     s.id,
-                    href:    "#",
-                    onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
-                  }, [
-                    m("img", { src: s.url, alt: game.name, loading: "lazy" }),
-                  ]))
-                ),
-              ]) : null,
-
-            ]),
+        m(".GameDetailMid", [
+          game.summary ? m(".GameDetailSection.GameDetailMid-about", [
+            m("h3.GameDetailSection-title", "About"),
+            m("p.GameDetailSummary", game.summary),
+          ]) : null,
+          m(".GameDetailInfoCard", [
+            m("h3.GameDetailInfoCard-title", "Game Info"),
+            game.developer    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Developer"), m("span.GameDetailInfoCard-value", game.developer)])    : null,
+            game.publisher    ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Publisher"), m("span.GameDetailInfoCard-value", game.publisher)])    : null,
+            game.release_date ? m(".GameDetailInfoCard-row", [m("span.GameDetailInfoCard-label", "Released"),  m("span.GameDetailInfoCard-value", game.release_date)]) : null,
+            game.genres && game.genres.length > 0 ? m(".GameDetailInfoCard-row", [
+              m("span.GameDetailInfoCard-label", "Genres"),
+              m("span.GameDetailInfoCard-value", game.genres.map((g) => g.name).join(", ")),
+            ]) : null,
           ]),
         ]),
-      ]),
-    ]);
+
+        m(".GameDetailSection", [
+          m("h3.GameDetailSection-title", "Related Discussions"),
+          game.related_discussions && game.related_discussions.length > 0
+            ? m(".GameDetailDiscussions",
+                game.related_discussions.map((d) => m("a.GameDetailDiscussion", {
+                  key:      d.id,
+                  href:     app.route("discussion", { id: d.id + (d.slug ? "-" + d.slug : "") }),
+                  oncreate: m.route.link,
+                }, [
+                  d.user_avatar
+                    ? m("img.GameDetailDiscussion-avatar", { src: d.user_avatar, alt: d.user_username || "" })
+                    : m(".GameDetailDiscussion-avatarFallback", m("i.fas.fa-user")),
+                  m(".GameDetailDiscussion-body", [
+                    m(".GameDetailDiscussion-title", d.title),
+                    m(".GameDetailDiscussion-meta", [m("i.fas.fa-comment"), " ", d.comment_count]),
+                  ]),
+                ]))
+              )
+            : m("p.helpText", "No discussions yet. Be the first to post about this game!"),
+        ]),
+
+        game.screenshots && game.screenshots.length > 0 ? m(".GameDetailSection", [
+          m("h3.GameDetailSection-title", "Screenshots"),
+          m(".GameDetailScreenshots",
+            game.screenshots.map((s, idx) => m("a.GameDetailScreenshot", {
+              key:     s.id,
+              href:    "#",
+              onclick: (e) => { e.preventDefault(); openLightbox(game.screenshots, idx); },
+            }, [
+              m("img", { src: s.url, alt: game.name, loading: "lazy" }),
+            ]))
+          ),
+        ]) : null,
+
+      ])
+    );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Composer helpers — game linking
+// Composer helpers
 // ---------------------------------------------------------------------------
 function getLinkedGames(composer) {
-  if (!composer.fields.gamepediaGames) {
-    composer.fields.gamepediaGames = [];
-  }
+  if (!composer.fields.gamepediaGames) composer.fields.gamepediaGames = [];
   return composer.fields.gamepediaGames;
 }
 
 function openGamePicker(composer) {
   const linked = getLinkedGames(composer);
   const max    = app.forum.attribute("gamepediaMaxGamesPerDiscussion") || 3;
-
   if (linked.length >= max) {
     app.alerts.show({ type: "error" }, "You can only link up to " + max + " game(s) per discussion.");
     return;
   }
-
   app.modal.show(GamePickerModal, {
     selected: linked,
     onSelect: (game) => {
-      if (!linked.some((g) => g.id === game.id)) {
-        linked.push(game);
-        m.redraw();
-      }
+      if (!linked.some((g) => g.id === game.id)) { linked.push(game); m.redraw(); }
     },
   });
 }
@@ -513,7 +462,6 @@ function openGamePicker(composer) {
 function viewGameChips(composer) {
   const linked = getLinkedGames(composer);
   if (linked.length === 0) return null;
-
   return m(".GamepediaComposer-chips",
     linked.map((game) => m(".GamepediaComposer-chip", { key: game.id }, [
       game.cover_image_url
@@ -532,56 +480,31 @@ function viewGameChips(composer) {
 }
 
 // ---------------------------------------------------------------------------
-// GameCardSlideshow — desktop sidebar card on discussion page
+// GameCardSlideshow — desktop sidebar
 // ---------------------------------------------------------------------------
 class GameCardSlideshow {
-  oninit(vnode) {
-    this.games   = vnode.attrs.games;
-    this.current = 0;
-    this.rafId   = null;
-    this.barEl   = null;
-  }
+  oninit(vnode) { this.games = vnode.attrs.games; this.current = 0; this.rafId = null; this.barEl = null; }
+  oncreate()    { if (this.games.length > 1) this.startCycle(); }
+  onremove()    { if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; } }
 
-  oncreate() {
-    if (this.games.length > 1) this.startCycle();
-  }
-
-  onremove() {
-    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
-  }
-
-  getDuration() {
-    return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000;
-  }
+  getDuration() { return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000; }
 
   startCycle() {
     const duration = this.getDuration();
     let start = performance.now();
-
     const tick = (now) => {
       const elapsed = now - start;
       const pct = Math.min((elapsed / duration) * 100, 100);
       if (this.barEl) this.barEl.style.width = pct + "%";
-
-      if (elapsed >= duration) {
-        this.current = (this.current + 1) % this.games.length;
-        start = performance.now();
-        m.redraw();
-      }
-
+      if (elapsed >= duration) { this.current = (this.current + 1) % this.games.length; start = performance.now(); m.redraw(); }
       this.rafId = requestAnimationFrame(tick);
     };
-
     this.rafId = requestAnimationFrame(tick);
   }
 
   view() {
     const game = this.games[this.current];
-
-    return m("a.DiscussionGameCard", {
-      href:     app.route("gamepedia.game", { slug: game.slug }),
-      oncreate: m.route.link,
-    }, [
+    return m("a.DiscussionGameCard", { href: app.route("gamepedia.game", { slug: game.slug }), oncreate: m.route.link }, [
       m(".DiscussionGameCard-cover", [
         game.cover_image_url
           ? m("img", { src: game.cover_image_url, alt: game.name })
@@ -602,61 +525,37 @@ class GameCardSlideshow {
 }
 
 // ---------------------------------------------------------------------------
-// GameBannerSlideshow — mobile banner on discussion page
+// GameBannerSlideshow — mobile
 // ---------------------------------------------------------------------------
 class GameBannerSlideshow {
-  oninit(vnode) {
-    this.games   = vnode.attrs.games;
-    this.current = 0;
-    this.rafId   = null;
-    this.barEl   = null;
-  }
+  oninit(vnode) { this.games = vnode.attrs.games; this.current = 0; this.rafId = null; this.barEl = null; }
+  oncreate()    { if (this.games.length > 1) this.startCycle(); }
+  onremove()    { if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; } }
 
-  oncreate() {
-    if (this.games.length > 1) this.startCycle();
-  }
-
-  onremove() {
-    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
-  }
-
-  getDuration() {
-    return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000;
-  }
+  getDuration() { return (parseInt(app.forum.attribute("gamepediaSlideshowInterval")) || 4) * 1000; }
 
   startCycle() {
     const duration = this.getDuration();
     let start = performance.now();
-
     const tick = (now) => {
       const elapsed = now - start;
       const pct = Math.min((elapsed / duration) * 100, 100);
       if (this.barEl) this.barEl.style.width = pct + "%";
-
-      if (elapsed >= duration) {
-        this.current = (this.current + 1) % this.games.length;
-        start = performance.now();
-        m.redraw();
-      }
-
+      if (elapsed >= duration) { this.current = (this.current + 1) % this.games.length; start = performance.now(); m.redraw(); }
       this.rafId = requestAnimationFrame(tick);
     };
-
     this.rafId = requestAnimationFrame(tick);
   }
 
   view() {
     const game = this.games[this.current];
-
     return m("a.GameBanner", {
       href:     app.route("gamepedia.game", { slug: game.slug }),
       oncreate: m.route.link,
       style:    game.cover_image_url ? { backgroundImage: "url(" + game.cover_image_url + ")" } : {},
     }, [
       m(".GameBanner-overlay", [
-        game.cover_image_url && m(".GameBanner-thumb", [
-          m("img", { src: game.cover_image_url, alt: game.name }),
-        ]),
+        game.cover_image_url && m(".GameBanner-thumb", [m("img", { src: game.cover_image_url, alt: game.name })]),
         m(".GameBanner-info", [
           m(".GameBanner-name", game.name),
           game.release_year ? m(".GameBanner-year", game.release_year) : null,
@@ -677,12 +576,11 @@ class GameBannerSlideshow {
 // ---------------------------------------------------------------------------
 app.initializers.add("resofire-gamepedia", function () {
 
-  // Forum routes
   app.routes["gamepedia"]      = { path: "/gamepedia",       component: GamepediaPage };
   app.routes["gamepedia.game"] = { path: "/gamepedia/:slug", component: GameDetailPage };
 
-  // Sidenav link
-  extend(IndexPage.prototype, "navItems", function (items) {
+  // Sidenav link — extend IndexSidebar.navItems (2.x pattern)
+  extend(IndexSidebar.prototype, "navItems", function (items) {
     if (!app.forum.attribute("gamepediaCanView") && !app.session.user?.isAdmin()) return;
     items.add("gamepedia", m(LinkButton, {
       href: app.route("gamepedia"),
@@ -690,14 +588,13 @@ app.initializers.add("resofire-gamepedia", function () {
     }, "Gamepedia"), 80);
   });
 
-  // Keyboard shortcut Ctrl+Shift+G to open game picker
+  // Keyboard shortcut Ctrl+Shift+G
   document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === "G") {
       e.preventDefault();
       const composer = app.composer;
       if (composer && composer.isVisible()) {
         if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
-        // Check composer body class via string path — DiscussionComposer is a chunk module
         const DiscussionComposer = flarum.reg.get("core", "forum/components/DiscussionComposer");
         if (!DiscussionComposer || !(composer.body.componentClass === DiscussionComposer)) return;
         openGamePicker(composer);
@@ -705,7 +602,7 @@ app.initializers.add("resofire-gamepedia", function () {
     }
   });
 
-  // Game cards in discussion sidebar — string-path for chunk module DiscussionPage
+  // Game cards in discussion sidebar — string-path for chunk module
   extend("flarum/forum/components/DiscussionPage", "sidebarItems", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
@@ -714,7 +611,7 @@ app.initializers.add("resofire-gamepedia", function () {
     items.add("gamepediaGames", m(GameCardSlideshow, { games }), 50);
   });
 
-  // Mobile banner — string-path for chunk module DiscussionPage
+  // Mobile banner — string-path for chunk module
   extend("flarum/forum/components/DiscussionPage", "pageContent", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
@@ -723,7 +620,7 @@ app.initializers.add("resofire-gamepedia", function () {
     items.add("gamepediaMobileBanner", m(GameBannerSlideshow, { games }), 50);
   });
 
-  // Gamepad toolbar button — string-path for chunk module TextEditor
+  // Gamepad toolbar button — string-path for chunk module
   extend("flarum/forum/components/TextEditor", "toolbarItems", function (items) {
     const composer = this.attrs.composer;
     if (!composer) return;
@@ -736,7 +633,7 @@ app.initializers.add("resofire-gamepedia", function () {
     }, m("i.fas.fa-gamepad")), -10);
   });
 
-  // Game chips in composer header — string-path for chunk module DiscussionComposer
+  // Game chips in composer header — string-path for chunk module
   extend("flarum/forum/components/DiscussionComposer", "headerItems", function (items) {
     if (!app.forum.attribute("gamepediaCanLinkGame") && !app.session.user?.isAdmin()) return;
     const chips = viewGameChips(this.composer);
@@ -746,9 +643,7 @@ app.initializers.add("resofire-gamepedia", function () {
   // Send linked game IDs with discussion creation — string-path for chunk module
   extend("flarum/forum/components/DiscussionComposer", "data", function (data) {
     const linked = getLinkedGames(this.composer);
-    if (linked.length > 0) {
-      data.gamepediaGameIds = linked.map((g) => g.id);
-    }
+    if (linked.length > 0) data.gamepediaGameIds = linked.map((g) => g.id);
   });
 
 });

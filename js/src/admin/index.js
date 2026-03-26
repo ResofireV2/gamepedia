@@ -255,13 +255,13 @@ class EditGameGenresModal extends Modal {
 class EditGameAwardsModal extends Modal {
   oninit(vnode) {
     super.oninit(vnode);
-    this.game    = this.attrs.game;
-    this.awards  = [];
-    this.loading = true;
-    this.saving  = false;
-    this.year    = '';
-    this.title   = '';
-    this.error   = null;
+    this.game       = this.attrs.game;
+    this.awards     = [];
+    this.loading    = true;
+    this.saving     = false;
+    this.year       = '';
+    this.awardTitle = '';
+    this.error      = null;
     this.loadAwards();
   }
 
@@ -324,14 +324,14 @@ class EditGameAwardsModal extends Modal {
               m('input.FormControl', {
                 type:        'text',
                 placeholder: 'e.g. GOTY Winner',
-                value:       this.title,
-                oninput:     (e) => { this.title = e.target.value; },
+                value:       this.awardTitle,
+                oninput:     (e) => { this.awardTitle = e.target.value; },
               }),
             ]),
             m('.Form-group', [
               m('button.Button.Button--primary', {
                 type:     'button',
-                disabled: this.saving || !this.year.trim() || !this.title.trim(),
+                disabled: this.saving || !this.year.trim() || !this.awardTitle.trim(),
                 onclick:  () => this.saveAward(),
               }, this.saving ? [m('i.fas.fa-spinner.fa-spin'), ' Saving...'] : 'Add Award'),
             ]),
@@ -346,13 +346,13 @@ class EditGameAwardsModal extends Modal {
     app.request({
       method: 'POST',
       url:    app.forum.attribute('apiUrl') + '/gamepedia/admin/games/' + this.game.id + '/awards',
-      body:   { year: this.year.trim(), title: this.title.trim() },
+      body:   { year: this.year.trim(), title: this.awardTitle.trim() },
     }).then((r) => {
       this.saving = false;
       if (r.error) { this.error = r.error; m.redraw(); return; }
       this.awards.push(r.data);
       this.year  = '';
-      this.title = '';
+      this.awardTitle = '';
       m.redraw();
     }).catch((e) => {
       this.saving = false;

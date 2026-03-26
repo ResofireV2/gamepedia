@@ -301,7 +301,7 @@ function awardBadgeSvg(award) {
 
   // Center vertically in the circle (baseline around y=56)
   const lineHeight = 9;
-  const startY     = 54 - ((lines.length - 1) * lineHeight) / 2;
+  const startY     = 58 - ((lines.length - 1) * lineHeight) / 2;
 
   const textLines = lines.map((line, i) =>
     `<text x="50" y="${startY + i * lineHeight}" text-anchor="middle" fill="#FFD700"
@@ -320,9 +320,11 @@ function awardBadgeSvg(award) {
     <!-- Dotted inner border -->
     <circle cx="50" cy="50" r="33" fill="none" stroke="#FFD700" stroke-width="0.8"
       stroke-dasharray="2,2"/>
-    <!-- Year at top -->
-    <text x="50" y="26" text-anchor="middle" fill="#FFD700"
+    <!-- Year at top of blue face -->
+    <text x="50" y="32" text-anchor="middle" fill="#FFD700"
       font-family="Arial,sans-serif" font-size="11" font-weight="bold">${award.year}</text>
+    <!-- Divider line under year -->
+    <line x1="30" y1="36" x2="70" y2="36" stroke="#FFD700" stroke-width="0.5" opacity="0.6"/>
     <!-- Award title lines -->
     ${textLines}
   </svg>`;

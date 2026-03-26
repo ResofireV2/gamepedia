@@ -641,7 +641,7 @@ class GamepediaAdminPage extends ExtensionPage {
           type:     "button",
           title:    "Manage awards",
           disabled: isDeleting || isRefreshing,
-          onclick:  () => app.modal.show(EditGameAwardsModal, { game }),
+          onclick:  () => this.openGameAwardsModal(game),
         }, m("i.fas.fa-trophy")),
         m("button.AdminGameCard-btn", {
           type:     "button",
@@ -691,6 +691,10 @@ class GamepediaAdminPage extends ExtensionPage {
       currentGenres: game.genres || [],
       onSaved:       () => {},
     });
+  }
+
+  openGameAwardsModal(game) {
+    setTimeout(() => app.modal.show(EditGameAwardsModal, { game }), 0);
   }
 
   createGenre() {

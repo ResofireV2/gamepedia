@@ -813,3 +813,55 @@
   width: 0%;
   background: var(--primary-color);
 }
+
+// ── Game Award Badges ─────────────────────────────────────────────────────────
+
+// Desktop: badges sit to the right of game info inside the hero
+.GameDetailHero-awards {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+  padding-left: 20px;
+}
+
+.GameDetailAward {
+  svg {
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    transition: transform 0.15s ease;
+  }
+
+  &:hover svg {
+    transform: scale(1.08);
+  }
+}
+
+// Mobile: hide hero badges, show the mobile strip below the hero
+@media (max-width: 767px) {
+  .GameDetailHero-awards {
+    display: none;
+  }
+
+  .GameDetailAwards-mobile {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 0 8px;
+  }
+}
+
+// Desktop: hide mobile strip
+@media (min-width: 768px) {
+  .GameDetailAwards-mobile {
+    display: none;
+  }
+}
+
+// Shared badge container used by both desktop and mobile
+.GameDetailAwards {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

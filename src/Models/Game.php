@@ -64,6 +64,14 @@ class Game extends Model
     }
 
     /**
+     * A game has many awards.
+     */
+    public function awards()
+    {
+        return $this->hasMany(Award::class, 'game_id')->orderBy('year', 'desc');
+    }
+
+    /**
      * Helper: return the release year as an integer, or null.
      * first_release_date is stored as a Unix timestamp.
      */

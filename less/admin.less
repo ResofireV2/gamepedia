@@ -107,7 +107,7 @@
 
 .AdminGameGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -247,3 +247,30 @@
 }
 
 .GenreCheckbox-count { color: var(--muted-more-color); font-size: 0.8em; }
+
+// ── Game Award Modal ──────────────────────────────────────────────────────────
+
+.GameAwardList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.GameAwardList-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--control-bg-shaded);
+  border-radius: 6px;
+  background: var(--body-bg);
+}
+
+.GameAwardList-info {
+  flex: 1;
+  font-size: 0.9em;
+
+  strong { color: var(--primary-color); margin-right: 4px; }
+}

@@ -20,7 +20,7 @@ class ShowGameController implements RequestHandlerInterface
         }
 
         $slug = $request->getQueryParams()['slug'] ?? '';
-        $game = Game::with(['genres', 'screenshots'])
+        $game = Game::with(['genres', 'screenshots', 'awards'])
                     ->where('slug', $slug)
                     ->first();
 
@@ -75,6 +75,11 @@ class ShowGameController implements RequestHandlerInterface
                     'order'         => $s->order,
                 ]),
                 'related_discussions'  => $discussions,
+                'awards'               => $game->awards->map(fn($a) => [
+                    'id'    => $a->id,
+                    'year'  => $a->year,
+                    'title' => $a->title,
+                ]),
             ],
             'error' => null,
         ]);

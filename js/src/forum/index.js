@@ -280,6 +280,66 @@ class GamepediaPage extends Page {
 }
 
 // ---------------------------------------------------------------------------
+// Award badge SVG — always gold/blue, generated from { year, title }
+// ---------------------------------------------------------------------------
+
+function awardBadgeSvg(award) {
+  // Split title into up to 3 lines for centering in the circle
+  const words    = award.title.toUpperCase().split(' ');
+  const lines    = [];
+  let   current  = '';
+  for (const word of words) {
+    const candidate = current ? current + ' ' + word : word;
+    if (candidate.length > 10 && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  // Center vertically in the circle (baseline around y=56)
+  const lineHeight = 9;
+  const startY     = 54 - ((lines.length - 1) * lineHeight) / 2;
+
+  const textLines = lines.map((line, i) =>
+    `<text x="50" y="${startY + i * lineHeight}" text-anchor="middle" fill="#FFD700"
+      font-family="Arial,sans-serif" font-size="8" font-weight="bold">${line}</text>`
+  ).join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="80" height="80">
+    <!-- Outer gold ring -->
+    <circle cx="50" cy="50" r="48" fill="#B8860B"/>
+    <!-- Mid gold ring -->
+    <circle cx="50" cy="50" r="44" fill="#FFD700"/>
+    <!-- Inner gold ring -->
+    <circle cx="50" cy="50" r="40" fill="#B8860B"/>
+    <!-- Blue face -->
+    <circle cx="50" cy="50" r="36" fill="#1a3a6e"/>
+    <!-- Dotted inner border -->
+    <circle cx="50" cy="50" r="33" fill="none" stroke="#FFD700" stroke-width="0.8"
+      stroke-dasharray="2,2"/>
+    <!-- Year at top -->
+    <text x="50" y="26" text-anchor="middle" fill="#FFD700"
+      font-family="Arial,sans-serif" font-size="9" font-weight="bold">${award.year}</text>
+    <!-- Award title lines -->
+    ${textLines}
+  </svg>`;
+}
+
+function renderAwardBadges(awards) {
+  if (!awards || awards.length === 0) return null;
+  const display = awards.slice(0, 3);
+  return m('.GameDetailAwards',
+    display.map((award) => m('.GameDetailAward', {
+      key:   award.id,
+      title: award.year + ' — ' + award.title,
+    }, m.trust(awardBadgeSvg(award))))
+  );
+}
+
+// ---------------------------------------------------------------------------
 // GameDetailPage — uses PageStructure + IndexSidebar (2.x pattern)
 // ---------------------------------------------------------------------------
 class GameDetailPage extends Page {
@@ -358,6 +418,10 @@ class GameDetailPage extends Page {
                   oncreate: m.route.link,
                 }, [m("i.fas.fa-arrow-left"), " Back to Gamepedia"]),
               ]),
+              // Award badges — desktop only (hidden on mobile via CSS)
+              game.awards && game.awards.length > 0
+                ? m(".GameDetailHero-awards", renderAwardBadges(game.awards))
+                : null,
             ]),
           ]),
         ]),
@@ -365,6 +429,11 @@ class GameDetailPage extends Page {
       sidebar: () => m(IndexSidebar),
     },
       m(".GameDetailBody", [
+
+        // Award badges — mobile only (hidden on desktop via CSS)
+        game.awards && game.awards.length > 0
+          ? m(".GameDetailAwards-mobile", renderAwardBadges(game.awards))
+          : null,
 
         game.trailer_youtube_id ? m(".GameDetailSection", [
           m("h3.GameDetailSection-title", "Trailer"),

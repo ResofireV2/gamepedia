@@ -20,6 +20,9 @@ use Resofire\Gamepedia\Api\Serializers\ForumGamepediaAttributes;
 use Resofire\Gamepedia\Api\Serializers\DiscussionGameSerializer;
 use Resofire\Gamepedia\Api\Controllers\LinkGamesToDiscussionController;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGameGenresController;
+use Resofire\Gamepedia\Api\Controllers\Admin\ListAwardsController;
+use Resofire\Gamepedia\Api\Controllers\Admin\SaveAwardController;
+use Resofire\Gamepedia\Api\Controllers\Admin\DeleteAwardController;
 
 return [
     (new Extend\ServiceProvider())
@@ -68,7 +71,10 @@ return [
         ->get('/gamepedia/admin/genres',        'gamepedia.admin.genres.index',   ListGenresController::class)
         ->post('/gamepedia/admin/genres',        'gamepedia.admin.genres.create',  CreateGenreController::class)
         ->post('/gamepedia/admin/genres/{id}',   'gamepedia.admin.genres.update',  UpdateGenreController::class)
-        ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class),
+        ->delete('/gamepedia/admin/genres/{id}','gamepedia.admin.genres.delete',  DeleteGenreController::class)
+        ->get('/gamepedia/admin/games/{game_id}/awards',    'gamepedia.admin.awards.index',  ListAwardsController::class)
+        ->post('/gamepedia/admin/games/{game_id}/awards',   'gamepedia.admin.awards.save',   SaveAwardController::class)
+        ->delete('/gamepedia/admin/awards/{id}',            'gamepedia.admin.awards.delete', DeleteAwardController::class),
 
     (new Extend\Model(Discussion::class))
         ->belongsToMany('gamepediaGames', Game::class, 'gamepedia_discussion_game', 'discussion_id', 'game_id'),

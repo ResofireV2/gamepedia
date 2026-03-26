@@ -250,6 +250,131 @@ class EditGameGenresModal extends Modal {
 }
 
 // ---------------------------------------------------------------------------
+// EditGameAwardsModal — add/delete awards for a game
+// ---------------------------------------------------------------------------
+class EditGameAwardsModal extends Modal {
+  oninit(vnode) {
+    super.oninit(vnode);
+    this.game    = this.attrs.game;
+    this.awards  = [];
+    this.loading = true;
+    this.saving  = false;
+    this.year    = '';
+    this.title   = '';
+    this.error   = null;
+    this.loadAwards();
+  }
+
+  className() { return 'EditGameAwardsModal Modal--medium'; }
+  title()     { return 'Awards — ' + this.game.name; }
+
+  loadAwards() {
+    app.request({
+      method: 'GET',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/admin/games/' + this.game.id + '/awards',
+    }).then((r) => {
+      this.loading = false;
+      this.awards  = r.data || [];
+      m.redraw();
+    }).catch(() => {
+      this.loading = false;
+      m.redraw();
+    });
+  }
+
+  content() {
+    if (this.loading) return m('.Modal-body', m('p', [m('i.fas.fa-spinner.fa-spin'), ' Loading...']));
+
+    return m('.Modal-body', [
+      this.error && m('.Alert.Alert--error', { style: 'margin-bottom: 12px' }, this.error),
+
+      // Existing awards list
+      this.awards.length > 0
+        ? m('.GameAwardList', this.awards.map((award) => m('.GameAwardList-item', { key: award.id }, [
+            m('.GameAwardList-info', [
+              m('strong', award.year),
+              m('span', ' — ' + award.title),
+            ]),
+            m('button.Button.Button--danger', {
+              type:    'button',
+              onclick: () => this.deleteAward(award),
+            }, m('i.fas.fa-trash')),
+          ])))
+        : m('p.helpText', 'No awards yet.'),
+
+      // Add form
+      m('hr', { style: 'margin: 16px 0' }),
+      m('h4', { style: 'margin: 0 0 10px' }, 'Add Award'),
+      this.awards.length >= 3
+        ? m('p.helpText', 'Maximum of 3 awards reached.')
+        : m('.Form', [
+            m('.Form-group', [
+              m('label', 'Year'),
+              m('input.FormControl', {
+                type:        'text',
+                placeholder: 'e.g. 2025',
+                maxlength:   4,
+                style:       'width: 100px',
+                value:       this.year,
+                oninput:     (e) => { this.year = e.target.value; },
+              }),
+            ]),
+            m('.Form-group', [
+              m('label', 'Award Title'),
+              m('input.FormControl', {
+                type:        'text',
+                placeholder: 'e.g. GOTY Winner',
+                value:       this.title,
+                oninput:     (e) => { this.title = e.target.value; },
+              }),
+            ]),
+            m('.Form-group', [
+              m('button.Button.Button--primary', {
+                type:     'button',
+                disabled: this.saving || !this.year.trim() || !this.title.trim(),
+                onclick:  () => this.saveAward(),
+              }, this.saving ? [m('i.fas.fa-spinner.fa-spin'), ' Saving...'] : 'Add Award'),
+            ]),
+          ]),
+    ]);
+  }
+
+  saveAward() {
+    this.saving = true;
+    this.error  = null;
+    m.redraw();
+    app.request({
+      method: 'POST',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/admin/games/' + this.game.id + '/awards',
+      body:   { year: this.year.trim(), title: this.title.trim() },
+    }).then((r) => {
+      this.saving = false;
+      if (r.error) { this.error = r.error; m.redraw(); return; }
+      this.awards.push(r.data);
+      this.year  = '';
+      this.title = '';
+      m.redraw();
+    }).catch((e) => {
+      this.saving = false;
+      this.error  = e.response?.json?.error || 'Failed to save award.';
+      m.redraw();
+    });
+  }
+
+  deleteAward(award) {
+    app.request({
+      method: 'DELETE',
+      url:    app.forum.attribute('apiUrl') + '/gamepedia/admin/awards/' + award.id,
+    }).then(() => {
+      this.awards = this.awards.filter((a) => a.id !== award.id);
+      m.redraw();
+    }).catch(() => {
+      app.alerts.show({ type: 'error' }, 'Failed to delete award.');
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // GamepediaAdminPage — Games / Genres / Settings tabs
 // ---------------------------------------------------------------------------
 class GamepediaAdminPage extends ExtensionPage {
@@ -512,6 +637,12 @@ class GamepediaAdminPage extends ExtensionPage {
           disabled: isDeleting || isRefreshing,
           onclick:  () => this.openGameGenresModal(game),
         }, m("i.fas.fa-tags")),
+        m("button.AdminGameCard-btn", {
+          type:     "button",
+          title:    "Manage awards",
+          disabled: isDeleting || isRefreshing,
+          onclick:  () => app.modal.show(EditGameAwardsModal, { game }),
+        }, m("i.fas.fa-trophy")),
         m("button.AdminGameCard-btn", {
           type:     "button",
           title:    "Refresh from IGDB",

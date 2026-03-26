@@ -608,22 +608,18 @@ app.initializers.add("resofire-gamepedia", function () {
     }
   });
 
-  // Game cards in discussion sidebar — string-path for chunk module
+  // Game cards in discussion sidebar (desktop) and mobile banner —
+  // both registered to sidebarItems. CSS media queries control which is visible.
+  // DiscussionPage has no pageContent method in 2.x.
   extendUtil("flarum/forum/components/DiscussionPage", "sidebarItems", function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
     const games = discussion.attribute("gamepediaGames");
     if (!games || games.length === 0) return;
+    // Desktop sidebar card
     items.add("gamepediaGames", m(GameCardSlideshow, { games }), 50);
-  });
-
-  // Mobile banner — string-path for chunk module
-  extendUtil("flarum/forum/components/DiscussionPage", "pageContent", function (items) {
-    const discussion = this.discussion;
-    if (!discussion) return;
-    const games = discussion.attribute("gamepediaGames");
-    if (!games || games.length === 0) return;
-    items.add("gamepediaMobileBanner", m(GameBannerSlideshow, { games }), 50);
+    // Mobile banner — hidden on desktop via CSS, shown on mobile
+    items.add("gamepediaMobileBanner", m(GameBannerSlideshow, { games }), 49);
   });
 
   // Gamepad toolbar button — TextEditor is in common (not a chunk), get it directly

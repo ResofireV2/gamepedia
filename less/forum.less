@@ -1,8 +1,6 @@
 // Gamepedia forum styles
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
-// Uses Flarum's standard Hero styles (--hero-bg, --hero-color) — no overrides needed.
-// Just add a bottom margin to space it from the content below.
 
 .GamepediaHero {
   margin-bottom: 0;
@@ -44,7 +42,7 @@
 .GamepediaGrid-empty {
   text-align: center;
   padding: 40px;
-  color: var(--muted-color, #888);
+  color: var(--muted-color);
   grid-column: 1 / -1;
 }
 
@@ -62,7 +60,7 @@
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 20px var(--shadow-color);
     text-decoration: none;
     color: inherit;
   }
@@ -70,9 +68,9 @@
 
 .GameCard-cover {
   width: 100%;
-  padding-top: 133%;  // 3:4 aspect ratio — standard game cover
+  padding-top: 133%; // 3:4 aspect ratio
   position: relative;
-  background: #2a2a3e;
+  background: var(--control-bg);
   overflow: hidden;
 
   img {
@@ -90,7 +88,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 2em;
-    color: #555;
+    color: var(--muted-color);
   }
 }
 
@@ -112,13 +110,10 @@
 
 .GameCard-year {
   font-size: 0.85em;
-  color: var(--muted-color, #888);
+  color: var(--muted-color);
 }
 
 // ── Game Detail Page ──────────────────────────────────────────────────────────
-
-// Remove the App--gamepediaDetail sidebar-hiding approach entirely.
-// Instead we use the full container width and let the grid do its job.
 
 .GameDetailPage {
   padding-bottom: 60px;
@@ -127,10 +122,10 @@
 .GameDetail-loading {
   text-align: center;
   padding: 60px;
-  color: var(--muted-color, #888);
+  color: var(--muted-color);
 }
 
-// Hero section with blurred background
+// Hero — intentionally dark cinematic area, always dark regardless of theme
 .GameDetailHero {
   background-color: #1a1a2e;
   background-size: cover;
@@ -175,7 +170,7 @@
 
 .GameDetailHero-info {
   flex: 1;
-  color: #fff;
+  color: #fff; // always white — on dark hero
 
   .GameDetailHero-title {
     margin: 0 0 12px;
@@ -201,7 +196,6 @@
 
   .GameDetailHero-back {
     margin-top: 16px;
-
     i { margin-right: 6px; }
   }
 }
@@ -211,14 +205,14 @@
   padding: 3px 10px;
   background: var(--primary-color);
   border: 1px solid var(--primary-color);
-  color: #fff;
+  color: var(--text-on-dark);
   border-radius: 12px;
   font-size: 0.8em;
   text-decoration: none;
 
   &:hover {
     background: var(--primary-color);
-    color: #fff;
+    color: var(--text-on-dark);
     opacity: 0.85;
     text-decoration: none;
   }
@@ -252,6 +246,7 @@
 .GameDetailMid-about {
   margin-bottom: 0;
 }
+
 .GameDetailSection {
   margin-bottom: 30px;
 
@@ -269,7 +264,7 @@
   color: var(--muted-color);
 }
 
-// Trailer — YouTube iframe embed
+// Trailer — intentionally black letterbox
 .GameDetailTrailer {
   position: relative;
   padding-top: 56.25%;
@@ -286,7 +281,7 @@
   }
 }
 
-// ── Custom Lightbox ───────────────────────────────────────────────────────────
+// ── Custom Lightbox — intentionally dark overlay ───────────────────────────────
 
 #gp-lightbox {
   position: fixed;
@@ -410,7 +405,7 @@
     justify-content: space-between;
     gap: 10px;
     padding: 6px 0;
-    border-bottom: 1px solid rgba(128,128,128,0.1);
+    border-bottom: 1px solid var(--control-bg-light);
     font-size: 0.9em;
 
     &:last-child { border-bottom: none; }
@@ -444,7 +439,7 @@
   color: inherit;
 
   &:hover {
-    background: var(--control-bg-active);
+    background: var(--control-bg-light);
     text-decoration: none;
   }
 
@@ -460,7 +455,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--control-bg-active);
+    background: var(--control-bg-light);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -501,7 +496,7 @@
   margin: 20px 0 40px;
 
   .GamepediaPagination-info {
-    color: var(--muted-color, #888);
+    color: var(--muted-color);
     font-size: 0.9em;
   }
 }
@@ -537,7 +532,7 @@
   i.fas.fa-gamepad {
     width: 24px;
     text-align: center;
-    color: var(--muted-color, #888);
+    color: var(--muted-color);
   }
 
   span {
@@ -557,7 +552,7 @@
     line-height: 1;
     flex-shrink: 0;
 
-    &:hover { color: var(--alert-error-bg, #d9534f); }
+    &:hover { color: var(--alert-error-bg); }
   }
 }
 
@@ -572,7 +567,7 @@
 .GamePicker-loading {
   text-align: center;
   padding: 20px;
-  color: var(--muted-color, #888);
+  color: var(--muted-color);
 }
 
 .GamePicker-results {
@@ -622,7 +617,7 @@
     justify-content: center;
     background: var(--control-bg);
     border-radius: 4px;
-    color: var(--muted-color, #888);
+    color: var(--muted-color);
     flex-shrink: 0;
   }
 
@@ -650,7 +645,7 @@
   }
 }
 
-// ── Discussion Sidebar Game Card Slideshow ────────────────────────────────────
+// ── Discussion Sidebar Game Card (desktop) ────────────────────────────────────
 
 .DiscussionGameCard {
   display: flex;
@@ -660,7 +655,7 @@
   text-decoration: none;
   color: inherit;
   background: var(--control-bg);
-  border: 1px solid rgba(128,128,128,0.15);
+  border: 1px solid var(--control-bg);
   transition: border-color 0.15s;
   width: 100%;
 
@@ -675,7 +670,7 @@
   width: 100%;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  background: #222;
+  background: var(--control-bg);
 
   img {
     width: 100%;
@@ -690,7 +685,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #aaa;
+    color: var(--muted-color);
     font-size: 2em;
   }
 }
@@ -712,13 +707,13 @@
 
 .DiscussionGameCard-year {
   font-size: 0.8em;
-  color: var(--muted-color, #888);
+  color: var(--muted-color);
   margin-top: 2px;
 }
 
 .DiscussionGameCard-progress {
   height: 3px;
-  background: rgba(128,128,128,0.15);
+  background: var(--control-bg-light);
   width: 100%;
   flex-shrink: 0;
 }
@@ -729,7 +724,8 @@
   background: var(--primary-color);
 }
 
-// ── Discussion Mobile Game Banner Slideshow ───────────────────────────────────
+// ── Discussion Mobile Game Banner ─────────────────────────────────────────────
+// Mobile banner — intentionally dark cinematic strip, always dark
 
 // Hide sidebar card on mobile, show banner instead
 @media (max-width: 767px) {

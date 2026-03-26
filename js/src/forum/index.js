@@ -305,10 +305,10 @@ function awardBadgeSvg(award) {
 
   const textLines = lines.map((line, i) =>
     `<text x="50" y="${startY + i * lineHeight}" text-anchor="middle" fill="#FFD700"
-      font-family="Arial,sans-serif" font-size="8" font-weight="bold">${line}</text>`
+      font-family="Arial,sans-serif" font-size="10" font-weight="bold">${line}</text>`
   ).join('');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="80" height="80">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="110" height="110">
     <!-- Outer gold ring -->
     <circle cx="50" cy="50" r="48" fill="#B8860B"/>
     <!-- Mid gold ring -->
@@ -322,7 +322,7 @@ function awardBadgeSvg(award) {
       stroke-dasharray="2,2"/>
     <!-- Year at top -->
     <text x="50" y="26" text-anchor="middle" fill="#FFD700"
-      font-family="Arial,sans-serif" font-size="9" font-weight="bold">${award.year}</text>
+      font-family="Arial,sans-serif" font-size="11" font-weight="bold">${award.year}</text>
     <!-- Award title lines -->
     ${textLines}
   </svg>`;

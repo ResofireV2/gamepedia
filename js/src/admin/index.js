@@ -266,7 +266,7 @@ class EditGameAwardsModal extends Modal {
   }
 
   className() { return 'EditGameAwardsModal Modal--medium'; }
-  title()     { return 'Awards — ' + this.game.name; }
+  title()     { return 'Awards' + (this.game ? ' — ' + this.game.name : ''); }
 
   loadAwards() {
     app.request({

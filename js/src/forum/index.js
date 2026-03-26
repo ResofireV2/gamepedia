@@ -618,16 +618,13 @@ app.initializers.add("resofire-gamepedia", function () {
   });
 
   // Mobile banner — injected after the discussion hero, before the post stream.
-  // Extends DiscussionPage.hero() to append the banner directly below DiscussionHero.
-  // CSS hides it on desktop (min-width: 768px) and shows it only on mobile.
-  extendUtil("flarum/forum/components/DiscussionPage", "hero", function (vnode) {
+  // Must use override (not extend) because extend discards the callback return value.
+  overrideUtil("flarum/forum/components/DiscussionPage", "hero", function (original) {
     const discussion = this.discussion;
-    if (!discussion) return;
-    const games = discussion.attribute("gamepediaGames");
-    if (!games || games.length === 0) return;
-    // vnode is the return value from the original hero() — wrap it with the banner
+    const games = discussion && discussion.attribute("gamepediaGames");
+    if (!games || games.length === 0) return original();
     return m("div", [
-      vnode,
+      original(),
       m(GameBannerSlideshow, { games }),
     ]);
   });

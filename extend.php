@@ -1,13 +1,9 @@
 <?php
 
 use Flarum\Extend;
-use Flarum\Discussion\Event\Saving as DiscussionSaving;
-use Flarum\Discussion\Event\Started as DiscussionStarted;
 use Flarum\Discussion\Discussion;
 use Resofire\Gamepedia\Models\Game;
 use Resofire\Gamepedia\GamepediaServiceProvider;
-use Resofire\Gamepedia\Listeners\SaveGameLinks;
-use Resofire\Gamepedia\Listeners\SaveGameLinksAfterCreate;
 use Resofire\Gamepedia\Api\Controllers\ListGamesPublicController;
 use Resofire\Gamepedia\Api\Controllers\ShowGameController;
 use Resofire\Gamepedia\Api\Controllers\Admin\IgdbSearchController;
@@ -22,6 +18,7 @@ use Resofire\Gamepedia\Api\Controllers\Admin\DeleteGenreController;
 use Flarum\Api\Resource;
 use Resofire\Gamepedia\Api\Serializers\ForumGamepediaAttributes;
 use Resofire\Gamepedia\Api\Serializers\DiscussionGameSerializer;
+use Resofire\Gamepedia\Api\Controllers\LinkGamesToDiscussionController;
 use Resofire\Gamepedia\Api\Controllers\Admin\UpdateGameGenresController;
 
 return [
@@ -61,6 +58,7 @@ return [
     (new Extend\Routes('api'))
         ->get('/gamepedia/games',              'gamepedia.games.index',           ListGamesPublicController::class)
         ->get('/gamepedia/games/{slug}',       'gamepedia.games.show',            ShowGameController::class)
+        ->post('/gamepedia/discussions/{id}/games', 'gamepedia.discussions.games', LinkGamesToDiscussionController::class)
         ->get('/gamepedia/admin/igdb-search',  'gamepedia.admin.igdb-search',     IgdbSearchController::class)
         ->get('/gamepedia/admin/games',        'gamepedia.admin.games.index',     ListGamesController::class)
         ->post('/gamepedia/admin/import',      'gamepedia.admin.import',          ImportGameController::class)
@@ -75,9 +73,4 @@ return [
     (new Extend\Model(Discussion::class))
         ->belongsToMany('gamepediaGames', Game::class, 'gamepedia_discussion_game', 'discussion_id', 'game_id'),
 
-    // Flarum 2.x: Event::listen() requires callable|string, not an array.
-    // Listeners are invokable classes with a handle() method.
-    (new Extend\Event())
-        ->listen(DiscussionSaving::class,  SaveGameLinks::class)
-        ->listen(DiscussionStarted::class, SaveGameLinksAfterCreate::class),
 ];

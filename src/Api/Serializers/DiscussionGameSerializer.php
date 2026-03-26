@@ -7,10 +7,13 @@ use Flarum\Discussion\Discussion;
 
 /**
  * Flarum 2.x: Invokable fields class for Extend\ApiResource(DiscussionResource::class)->fields().
- * Replaces the 1.x Extend\ApiSerializer(DiscussionSerializer::class)->attributes() pattern.
  *
- * Adds the gamepediaGames array attribute to every discussion serialized by the API.
- * The JS reads discussion.attribute('gamepediaGames') to render game cards and badges.
+ * Adds the gamepediaGames array attribute to every discussion API response.
+ * The JS reads discussion.attribute('gamepediaGames') to render game cards.
+ *
+ * Game linking on discussion creation is handled by a dedicated
+ * POST /api/gamepedia/discussions/{id}/games route called after creation,
+ * avoiding JSON:API field validation issues with extra attributes.
  */
 class DiscussionGameSerializer
 {

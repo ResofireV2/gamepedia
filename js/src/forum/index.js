@@ -1,7 +1,7 @@
 "use strict";
 
 const app              = flarum.reg.get("core", "forum/app");
-const { extend: extendUtil } = flarum.reg.get("core", "common/extend");
+const { extend: extendUtil, override: overrideUtil } = flarum.reg.get("core", "common/extend");
 const Modal            = flarum.reg.get("core", "common/components/Modal");
 const Page             = flarum.reg.get("core", "common/components/Page");
 const LinkButton       = flarum.reg.get("core", "common/components/LinkButton");
@@ -644,10 +644,44 @@ app.initializers.add("resofire-gamepedia", function () {
     if (chips) items.add("gamepediaChips", chips, -100);
   });
 
-  // Send linked game IDs with discussion creation — string-path for chunk module
-  extendUtil("flarum/forum/components/DiscussionComposer", "data", function (data) {
+  // Override DiscussionComposer.onsubmit to link games after discussion creation.
+  // We cannot send gamepediaGameIds as a JSON:API attribute because
+  // flarum/json-api-server's assertFieldsValid rejects unknown attributes.
+  // Instead we let discussion creation succeed normally, then call our
+  // dedicated POST /api/gamepedia/discussions/{id}/games route.
+  overrideUtil("flarum/forum/components/DiscussionComposer", "onsubmit", function (original) {
     const linked = getLinkedGames(this.composer);
-    if (linked.length > 0) data.gamepediaGameIds = linked.map((g) => g.id);
+
+    if (linked.length === 0) {
+      original();
+      return;
+    }
+
+    const gameIds     = linked.map((g) => g.id);
+    const origSave    = app.store.createRecord.bind(app.store);
+
+    app.store.createRecord = function (type, data) {
+      app.store.createRecord = origSave;
+      const record = origSave(type, data);
+
+      if (type === "discussions") {
+        const origRecordSave = record.save.bind(record);
+        record.save = function (saveData) {
+          return origRecordSave(saveData).then(function (discussion) {
+            // Discussion created — now link games via our dedicated route
+            return app.request({
+              method: "POST",
+              url:    app.forum.attribute("apiUrl") + "/gamepedia/discussions/" + discussion.id() + "/games",
+              body:   { game_ids: gameIds },
+            }).then(() => discussion, () => discussion); // swallow link errors, return discussion
+          });
+        };
+      }
+
+      return record;
+    };
+
+    original();
   });
 
 });

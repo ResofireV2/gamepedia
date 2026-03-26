@@ -4,3 +4,11 @@ resofire-gamepedia:
       igdb_client_id_label: "IGDB Client ID"
       igdb_client_secret_label: "IGDB Client Secret"
       max_games_label: "Max Games Per Discussion"
+      slideshow_interval_label: "Game Card Slideshow Interval"
+      subtitle_label: "Gamepedia Subtitle"
+  forum:
+    gamepedia_link: "Gamepedia"
+    link_game_button: "Link a game"
+    no_games_found: "No games found."
+    search_placeholder: "Search your game library..."
+    no_discussions: "No discussions yet. Be the first to post about this game!"

@@ -13,15 +13,16 @@
   margin-top: 10px; max-height: 450px; overflow-y: auto;
 }
 
+// Modal-body background is --control-bg, so items use --body-bg to contrast
 .GameImport-result {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px; border: 1px solid var(--control-bg);
-  border-radius: 6px; background: var(--body-bg-shaded);
+  padding: 10px; border: 1px solid var(--control-bg-shaded);
+  border-radius: 6px; background: var(--body-bg);
 }
 
 .GameImport-cover {
   flex-shrink: 0; width: 45px; height: 60px;
-  overflow: hidden; border-radius: 4px; background: var(--control-bg-light);
+  overflow: hidden; border-radius: 4px; background: var(--control-bg);
   display: flex; align-items: center; justify-content: center;
   img { width: 100%; height: 100%; object-fit: cover; }
   .GameImport-noCover { color: var(--muted-more-color); font-size: 18px; }
@@ -111,13 +112,15 @@
   margin-bottom: 20px;
 }
 
+// Page content area is --body-bg. Cards use --control-bg to contrast,
+// matching Flarum's .Widget pattern used throughout the admin panel.
 .AdminGameCard {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--control-bg);
+  border: 1px solid var(--control-bg-shaded);
   border-radius: 8px;
   overflow: hidden;
-  background: var(--body-bg-shaded);
+  background: var(--control-bg);
 
   &:hover { border-color: var(--primary-color); }
 }
@@ -125,7 +128,7 @@
 .AdminGameCard-cover {
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  background: var(--control-bg);
+  background: var(--control-bg-shaded);
 
   img {
     width: 100%;
@@ -187,7 +190,7 @@
   &:last-child { border-right: none; }
 
   &:hover:not(:disabled) {
-    background: var(--control-bg-light);
+    background: var(--control-bg-shaded);
     color: var(--primary-color);
   }
 
@@ -208,10 +211,11 @@
 
 .GenreList { display: flex; flex-direction: column; gap: 8px; }
 
+// Genre items also sit on --body-bg, use --control-bg to contrast
 .GenreList-item {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 10px 12px;
-  border: 1px solid var(--control-bg); border-radius: 6px; background: var(--body-bg-shaded);
+  border: 1px solid var(--control-bg-shaded); border-radius: 6px; background: var(--control-bg);
 }
 
 .GenreList-info {
@@ -221,7 +225,7 @@
 
 .GenreList-count {
   font-size: 0.8em; color: var(--muted-color);
-  background: var(--control-bg-light); padding: 1px 7px; border-radius: 10px;
+  background: var(--control-bg-shaded); padding: 1px 7px; border-radius: 10px;
 }
 
 .GenreList-actions { display: flex; gap: 6px; flex-shrink: 0; }
@@ -234,10 +238,11 @@
   gap: 8px; max-height: 320px; overflow-y: auto; padding: 4px;
 }
 
+// Modal-body is --control-bg, checkbox hover uses --body-bg to contrast
 .GenreCheckbox {
   display: flex; align-items: center; gap: 6px;
   cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 0.9em;
-  &:hover { background: var(--control-bg-light); }
+  &:hover { background: var(--body-bg); }
   input[type="checkbox"] { flex-shrink: 0; cursor: pointer; }
 }
 
